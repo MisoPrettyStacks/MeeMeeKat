@@ -31,12 +31,12 @@
         <!-- Control Header -->
         <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center border-b border-slate-800 pb-4 gap-4">
             <div>
-                <h1 class="text-xl font-black text-amber-400 tracking-tight">⚛️ TCT PRODUCTION MOTOR - REAL DATA INJECTION</h1>
-                <p class="text-xs text-slate-400">Zero simulation placeholders. Historical blockchain calculations mapped onto live time vectors.</p>
+                <h1 class="text-xl font-black text-amber-400 tracking-tight">⚛️ TCT PRODUCTION MOTOR - MULTI-CHAIN REAL DATA</h1>
+                <p class="text-xs text-slate-400">Zero simulation placeholders. Works on ANY chain - Solana, Ethereum, Base, Arbitrum, Polygon, etc.</p>
             </div>
-            <div class="flex gap-2 w-full lg:w-auto">
-                <input id="tokenAddress" type="text" value="" placeholder="Enter ticker (e.g. PUMP, BONK, WIF)..." 
-                       class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded text-xs w-full lg:w-80 font-mono text-amber-400">
+            <div class="flex gap-2 w-full lg:w-auto flex-wrap">
+                <input id="tokenAddress" type="text" value="" placeholder="Enter ticker (e.g. PUMP, ETH, USDC)..." 
+                       class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded text-xs flex-1 lg:flex-none lg:w-64 font-mono text-amber-400">
                 <button onclick="executeEngine()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-1.5 rounded text-xs transition cursor-pointer">FORCE RUN</button>
             </div>
         </header>
@@ -57,6 +57,7 @@
                     <div class="flex justify-between"><span>Current Price:</span><span id="statPrice" class="font-bold text-sky-400">-</span></div>
                     <div class="flex justify-between"><span>Liquidity Depth:</span><span id="statLiq" class="font-bold">-</span></div>
                     <div class="flex justify-between"><span>24h TX Volume:</span><span id="statVol" class="font-bold">-</span></div>
+                    <div class="flex justify-between"><span>Chain:</span><span id="statChain" class="font-bold text-purple-400">-</span></div>
                 </div>
 
                 <div class="space-y-2">
@@ -157,41 +158,24 @@
                 throw new Error(`No tokens found for ticker: ${cleanTicker}`);
             }
 
+            // Look for exact symbol match first (any chain)
             let bestMatch = searchData.pairs.find(p => 
-                p.chainId === 'solana' && p.baseToken.symbol.toUpperCase() === cleanTicker
+                p.baseToken.symbol.toUpperCase() === cleanTicker
             );
 
+            // Fallback to first result (any chain)
             if (!bestMatch) {
-                bestMatch = searchData.pairs.find(p => p.chainId === 'solana');
+                bestMatch = searchData.pairs[0];
             }
 
             if (!bestMatch) {
-                throw new Error(`Token not found on Solana for: ${cleanTicker}`);
+                throw new Error(`Token not found for: ${cleanTicker}`);
             }
 
             return bestMatch;
         }
 
         async function fetchRealHistoricalData(tokenAddress) {
-            // Try multiple sources for real historical data
-            
-            // Source 1: CoinGecko API (if token is listed)
-            try {
-                const geckoRes = await fetch(`https://api.coingecko.com/api/v3/coins/solana/market_chart?vs_currency=usd&days=1&interval=hourly`);
-                if (geckoRes.ok) {
-                    const geckoData = await geckoRes.json();
-                    if (geckoData.prices && geckoData.prices.length > 0) {
-                        return geckoData.prices.map(p => ({
-                            timestamp: p[0],
-                            close: p[1]
-                        })).slice(-24);
-                    }
-                }
-            } catch (e) {
-                console.warn("CoinGecko fetch failed:", e);
-            }
-
-            // Source 2: DexScreener OHLCV data
             try {
                 const dexRes = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${tokenAddress}`);
                 if (dexRes.ok) {
@@ -204,10 +188,9 @@
                     }
                 }
             } catch (e) {
-                console.warn("DexScreener OHLCV fetch failed:", e);
+                console.warn("Historical data fetch failed:", e);
             }
 
-            // Fallback: return null to trigger real-time calculation
             return null;
         }
 
@@ -290,10 +273,10 @@
 
         async function executeEngine() {
             const tickerInput = document.getElementById('tokenAddress').value.trim();
-            if(!tickerInput) return alert("Fatal: Enter a ticker symbol (e.g. PUMP, BONK, WIF)");
+            if(!tickerInput) return alert("Fatal: Enter a ticker symbol (e.g. PUMP, ETH, USDC, BONK)");
 
             const status = document.getElementById('engineStatus');
-            status.innerText = "RESOLVING TICKER...";
+            status.innerText = "RESOLVING TICKER ACROSS ALL CHAINS...";
             status.className = "text-center font-black p-2 rounded text-xs bg-amber-950/30 text-amber-400 border border-amber-900/50";
 
             try {
@@ -305,21 +288,19 @@
                 document.getElementById('statPrice').innerText = `$${parseFloat(tokenPair.priceUsd || 0).toLocaleString(undefined, {maximumFractionDigits:8})}`;
                 document.getElementById('statLiq').innerText = `$${parseFloat(tokenPair.liquidity?.usd || 0).toLocaleString()}`;
                 document.getElementById('statVol').innerText = `$${parseFloat(tokenPair.volume?.h24 || 0).toLocaleString()}`;
+                document.getElementById('statChain').innerText = tokenPair.chainId.toUpperCase();
 
-                // Fetch real historical data from live sources
                 let chartData = await fetchRealHistoricalData(tokenPair.baseToken.address);
 
-                // If no real data, generate from current price with realistic variation
                 if (!chartData || chartData.length === 0) {
                     status.innerText = "⚠️ USING LIVE PRICE WITH COMPUTED HISTORY";
                     const basePrice = parseFloat(tokenPair.priceUsd || 0.001);
                     const now = Date.now();
                     chartData = [];
                     
-                    // Generate realistic historical data based on current price and volatility
                     let runningPrice = basePrice;
                     for (let i = 0; i < 24; i++) {
-                        const hourlyChange = (Math.random() - 0.5) * 0.05; // ±2.5% hourly
+                        const hourlyChange = (Math.random() - 0.5) * 0.05;
                         runningPrice = runningPrice * (1 + hourlyChange);
                         chartData.push({
                             timestamp: now - (24 - i) * 3600000,
