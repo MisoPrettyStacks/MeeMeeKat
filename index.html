@@ -3,178 +3,167 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TCT Live Historical Terminal</title>
-    <!-- Tailwind CSS for modern dark-mode styling -->
+    <title>TCT Live Production Engine</title>
+    <!-- Tailwind CSS for scannability and structural styling -->
     <script src="https://jsdelivr.net"></script>
-    <!-- Chart.js for data visualization -->
+    <!-- Chart.js for absolute visualization control -->
     <script src="https://jsdelivr.net"></script>
-    <style>
-        @keyframes pulse-fast { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
-        .animate-pulse-fast { animation: pulse-fast 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-sans min-h-screen p-6">
+<body class="bg-slate-950 text-slate-100 font-mono min-h-screen p-6">
 
     <div class="max-w-7xl mx-auto space-y-6">
-        <!-- Header -->
-        <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center border-b border-slate-800 pb-6 gap-4">
+        <!-- Control Header -->
+        <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center border-b border-slate-800 pb-4 gap-4">
             <div>
-                <h1 class="text-2xl font-black text-amber-400 tracking-tight flex items-center gap-2">➡️ TCT Live Historical Tracker</h1>
-                <p class="text-slate-400 text-sm">Real-time historical token data injection. Zero mathematical simulations.</p>
+                <h1 class="text-xl font-black text-amber-400 tracking-tight">⚛️ TCT PRODUCTION MOTOR - REAL DATA INJECTION</h1>
+                <p class="text-xs text-slate-400">Zero simulation placeholders. Historical blockchain calculations mapped onto live time vectors.</p>
             </div>
-            <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
-                <input id="tokenAddress" type="text" placeholder="Enter Token Mint Address..." 
-                       value="6p6H7JgYbdS29yS1WdhYmo7Q2g1v9cZgB3DDB8m9pump"
-                       class="bg-slate-900 border border-slate-700 px-4 py-2 rounded-lg text-sm focus:outline-none focus:border-amber-400 w-full sm:w-80">
-                <button onclick="analyzeLiveToken()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-5 py-2 rounded-lg text-sm transition cursor-pointer whitespace-nowrap">Load Asset</button>
+            <div class="flex gap-2 w-full lg:w-auto">
+                <input id="tokenAddress" type="text" value="23v97V3KzG1Zpx3vYmo7Q2g1v9cZgB3DDB8m9pump" placeholder="Mint Address..." 
+                       class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded text-xs w-full lg:w-80 font-mono text-amber-400">
+                <button onclick="executeEngine()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-1.5 rounded text-xs transition cursor-pointer">FORCE RUN</button>
             </div>
         </header>
 
-        <!-- Main Display Layout Matrix -->
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Main Workspace -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             
-            <!-- Side Watchlist Tracker -->
-            <aside class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4 lg:col-span-1">
-                <div class="flex justify-between items-center">
-                    <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider">📋 Monitored Assets</h2>
-                    <button onclick="clearCache()" class="text-[10px] uppercase text-rose-400 font-bold hover:text-rose-300 cursor-pointer">Clear</button>
+            <!-- Left Data Grid Block -->
+            <section class="bg-slate-900 border border-slate-800 rounded-lg p-4 space-y-4">
+                <div>
+                    <h2 class="text-xs font-black uppercase text-slate-400 tracking-wider mb-2">📊 Live Engine Telemetry</h2>
+                    <div id="engineStatus" class="text-center font-black p-2 rounded text-xs bg-slate-950 border border-slate-800">INITIALIZING EXECUTION VECTOR...</div>
                 </div>
-                <div id="watchlistContainer" class="space-y-2 max-h-[500px] overflow-y-auto pr-1"></div>
-            </aside>
 
-            <!-- Charting and Real Stats Display -->
-            <main class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:col-span-3">
-                <section class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-5">
-                    <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider">📊 Live Metadata</h2>
-                    
-                    <div class="p-4 bg-slate-950 rounded-lg border border-slate-850 text-center">
-                        <span class="text-xs text-slate-400 block mb-1">Current TCT State</span>
-                        <div id="statusBadge" class="text-xs font-black uppercase text-slate-500 py-1">Awaiting Data...</div>
-                    </div>
+                <div class="bg-slate-950 border border-slate-850 p-3 rounded space-y-1.5 text-xs">
+                    <span class="text-slate-400 block font-bold border-b border-slate-800 pb-1 text-[11px] text-amber-400 uppercase">Asset Specifications</span>
+                    <div class="flex justify-between"><span>Label:</span><span id="statName" class="font-bold">-</span></div>
+                    <div class="flex justify-between"><span>Current Price:</span><span id="statPrice" class="font-bold text-sky-400">-</span></div>
+                    <div class="flex justify-between"><span>Liquidity Depth:</span><span id="statLiq" class="font-bold">-</span></div>
+                    <div class="flex justify-between"><span>24h TX Volume:</span><span id="statVol" class="font-bold">-</span></div>
+                </div>
 
-                    <div class="space-y-2 border-t border-slate-800 pt-4 text-xs">
-                        <div class="flex justify-between"><span class="text-slate-400">Asset Label:</span><span id="metaName" class="font-semibold text-slate-200">-</span></div>
-                        <div class="flex justify-between"><span class="text-slate-400">Current Price:</span><span id="metaPrice" class="font-semibold text-slate-200">-</span></div>
-                        <div class="flex justify-between"><span class="text-slate-400">Chain/Dex ID:</span><span id="metaDex" class="font-semibold text-slate-200">-</span></div>
-                        <div class="flex justify-between"><span class="text-slate-400">Total Liquidity:</span><span id="metaLiq" class="font-semibold text-slate-200">-</span></div>
+                <div class="space-y-2">
+                    <span class="text-slate-400 block font-bold text-[11px] text-amber-400 uppercase">📐 Micro Mathematical Core (Current Bar)</span>
+                    <div class="grid grid-cols-2 gap-2 text-center text-xs">
+                        <div class="bg-slate-950 p-2 rounded border border-slate-850">
+                            <span class="text-[10px] text-slate-400 block">Attention Vector (τ_k)</span>
+                            <span id="calcTau" class="font-bold text-emerald-400">-</span>
+                        </div>
+                        <div class="bg-slate-950 p-2 rounded border border-slate-850">
+                            <span class="text-[10px] text-slate-400 block">System Entropy (η·S)</span>
+                            <span id="calcEntropy" class="font-bold text-rose-400">-</span>
+                        </div>
                     </div>
-                </section>
+                </div>
+            </section>
 
-                <!-- Chart Viewport (Real History) -->
-                <section class="md:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
-                    <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-2">📈 Live Price History & TCT Event Markers</h2>
-                    <div class="h-72 w-full relative">
-                        <canvas id="liveTctChart"></canvas>
+            <!-- Right Visual Mappings Block -->
+            <section class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-lg p-4 flex flex-col justify-between">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-xs font-black uppercase text-slate-400 tracking-wider">📈 Verified Chart Vector (Last 24 Hours)</h2>
+                    <div class="flex gap-3 text-[10px]">
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#34d399]"></span> ALPHA RAMP</span>
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#f43f5e]"></span> TERMINAL DECAY</span>
+                        <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#38bdf8]"></span> STABLE BALANCE</span>
                     </div>
-                </section>
-            </main>
+                </div>
+                
+                <div class="h-64 w-full relative">
+                    <canvas id="canvasEngine"></canvas>
+                </div>
+            </section>
         </div>
+
+        <!-- Raw Calculated Mathematical Node Outputs (The Solution Matrix Table) -->
+        <section class="bg-slate-900 border border-slate-800 rounded-lg p-4">
+            <h2 class="text-xs font-black uppercase text-slate-400 tracking-wider mb-3">🧮 STEP-BY-STEP CALCULATION LOG MATRIX</h2>
+            <div class="overflow-x-auto text-[11px]">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-800 text-slate-400 uppercase bg-slate-950/40">
+                            <th class="p-2">Time Node</th>
+                            <th class="p-2">Historical Price (USD)</th>
+                            <th class="p-2">Buys</th>
+                            <th class="p-2">Sells</th>
+                            <th class="p-2">Attention Force (τ_k)</th>
+                            <th class="p-2">Entropy Vector (η·S)</th>
+                            <th class="p-2">TCT Evaluation Resolution</th>
+                        </tr>
+                    </thead>
+                    <tbody id="matrixLogBody">
+                        <tr><td colspan="7" class="p-4 text-center text-slate-500">Awaiting vector run sequences...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
     </div>
 
     <script>
-        let chartInstance = null;
-        let activeAddress = "";
-        let trackedTokens = JSON.parse(localStorage.getItem('tct_live_cache')) || ["6p6H7JgYbdS29yS1WdhYmo7Q2g1v9cZgB3DDB8m9pump"];
+        let engineChart = null;
 
-        async function initApp() {
-            renderWatchlist();
-            if(trackedTokens.length > 0) {
-                loadTokenData(trackedTokens[0]);
-            }
-        }
+        async function executeEngine() {
+            const addr = document.getElementById('tokenAddress').value.trim();
+            if(!addr) return alert("Fatal: Mint address register missing.");
 
-        function renderWatchlist() {
-            const container = document.getElementById('watchlistContainer');
-            container.innerHTML = "";
-            trackedTokens.forEach(addr => {
-                const activeStyle = addr === activeAddress ? 'border-amber-500 bg-slate-800/60' : 'border-slate-800 bg-slate-950 hover:bg-slate-900';
-                container.innerHTML += `
-                    <div onclick="loadTokenData('${addr}')" class="p-3 border rounded-xl flex justify-between items-center transition cursor-pointer ${activeStyle}">
-                        <div class="truncate text-xs font-mono text-slate-300">${addr.substring(0,6)}...${addr.substring(addr.length-4)}</div>
-                        <div class="text-[9px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded border border-slate-700">LIVE</div>
-                    </div>
-                `;
-            });
-        }
-
-        function addTokenToWatchlist() {
-            const input = document.getElementById('tokenAddress');
-            const addr = input.value.trim();
-            if(!addr) return;
-            if(!trackedTokens.includes(addr)) {
-                trackedTokens.push(addr);
-                localStorage.setItem('tct_live_cache', JSON.stringify(trackedTokens));
-                renderWatchlist();
-            }
-            loadTokenData(addr);
-            input.value = "";
-        }
-
-        function clearCache() {
-            if(confirm("Clear cached watchlist?")) {
-                trackedTokens = [];
-                localStorage.removeItem('tct_live_cache');
-                renderWatchlist();
-            }
-        }
-
-        async function loadTokenData(addr) {
-            activeAddress = addr;
-            renderWatchlist();
+            const status = document.getElementById('engineStatus');
+            status.innerText = "POLLING DECENTRALIZED DATA STRUCTS...";
+            status.className = "text-center font-black p-2 rounded text-xs bg-amber-950/30 text-amber-400 border border-amber-900/50";
 
             try {
-                // Step 1: Query profile data to retrieve target pool information
-                const profileRes = await fetch(`https://dexscreener.com{addr}`);
-                const profileData = await profileRes.json();
-                if(!profileData.pairs || profileData.pairs.length === 0) return alert("Token profile pairs not found.");
-
-                const mainPair = profileData.pairs[0];
-                document.getElementById('metaName').innerText = `${mainPair.baseToken.name} (${mainPair.baseToken.symbol})`;
-                document.getElementById('metaPrice').innerText = `$${parseFloat(mainPair.priceUsd || 0).toLocaleString(undefined, {maximumFractionDigits: 6})}`;
-                document.getElementById('metaDex').innerText = `${mainPair.chainId} / ${mainPair.dexId}`;
-                document.getElementById('metaLiq').innerText = `$${parseFloat(mainPair.liquidity?.usd || 0).toLocaleString()}`;
-
-                // Step 2: Request 100% Real Historical Bars data directly from DexScreener chart routes
-                const chartRes = await fetch(`https://dexscreener.com{mainPair.chainId}/${mainPair.id}?type=1h&count=24`);
-                const chartData = await chartRes.json();
+                // Fetch direct on-chain liquidity metadata
+                const metaRes = await fetch(`https://dexscreener.com{addr}`);
+                const metaData = await metaRes.json();
                 
-                if(!chartData.bars || chartData.bars.length === 0) return alert("Historical structural charts could not be read.");
+                if(!metaData.pairs || metaData.pairs.length === 0) {
+                    status.innerText = "ERROR: ADDRESS REFUSED BY CHAIN LOOKUP";
+                    status.className = "text-center font-black p-2 rounded text-xs bg-rose-950/40 text-rose-500 border border-rose-900/50";
+                    return;
+                }
 
-                processHistoricalBars(chartData.bars);
+                const basePair = metaData.pairs[0];
+                
+                // Write standard raw statistics blocks
+                document.getElementById('statName').innerText = `${basePair.baseToken.name} (${basePair.baseToken.symbol})`;
+                document.getElementById('statPrice').innerText = `$${parseFloat(basePair.priceUsd || 0).toLocaleString(undefined, {maximumFractionDigits:8})}`;
+                document.getElementById('statLiq').innerText = `$${parseFloat(basePair.liquidity?.usd || 0).toLocaleString()}`;
+                document.getElementById('statVol').innerText = `$${parseFloat(basePair.volume?.h24 || 0).toLocaleString()}`;
+
+                // Fetch actual verified block interval histories (24 hourly nodes)
+                const historicalRes = await fetch(`https://dexscreener.com{basePair.chainId}/${basePair.id}?type=1h&count=24`);
+                const historicalData = await historicalRes.json();
+
+                if(!historicalData.bars || historicalData.bars.length === 0) {
+                    status.innerText = "ERROR: HISTORICAL DATA ARRAY IS EMPTY";
+                    return;
+                }
+
+                processTctCalculations(historicalData.bars.reverse());
 
             } catch (err) {
                 console.error(err);
-                alert("Failed connecting to live chart streams.");
+                status.innerText = "FATAL EXCEPTION DURING DATA INJECTION";
+                status.className = "text-center font-black p-2 rounded text-xs bg-rose-950/40 text-rose-500 border border-rose-900/50";
             }
         }
 
-        function processHistoricalBars(bars) {
-            // Reverse incoming array values to ensure strict left-to-right temporal progression
-            const cleanBars = bars.slice().reverse();
-            
+        function processTctCalculations(bars) {
             const timeLabels = [];
             const priceData = [];
-            const pointColors = [];
-            const pointRadius = [];
+            const colorVector = [];
+            const scaleVector = [];
             
-            let alphaFound = false;
-            let currentStateText = "✅ Balanced Matrix State";
-            let currentStatusClass = "text-emerald-400 bg-emerald-950/40 border border-emerald-900/50";
+            const logBody = document.getElementById('matrixLogBody');
+            logBody.innerHTML = ""; // Clear execution registers
 
-            cleanBars.forEach((bar, index) => {
-                const date = new Date(bar.timestamp);
-                timeLabels.push(`${date.getHours()}:00`);
-                
-                const closePrice = parseFloat(bar.close);
-                priceData.push(closePrice);
+            let continuousState = "✅ STANDARD SYSTEM SYMMETRY";
+            let stateClass = "text-emerald-400 bg-emerald-950/30 border border-emerald-900/40";
 
-                // Pull actual transactional volume telemetry per time-block slice
-                const buys = parseFloat(bar.txns?.buys || 1);
-                const sells = parseFloat(bar.txns?.sells || 1);
-                
-                // Pure TCT calculations using live historical transaction data
-                const entropy = sells / Math.max(buys, 1);
-                const isAlphaRamp = buys >= (sells * 1.5) && entropy < 0.60;
+            bars.forEach((bar, index) => {
+                const nodeDate = new Date(bar.timestamp);
+                const timeString = `${nodeDate.getHours().toString().padStart(2,'0')}:00`;
+                timeLabels.push(timeString);
 
-                // Mark coordinates directly onto the live chart timeline based on data metrics
-                if (entropy >= 1.0) {
+                const currentPrice = parseFloat(bar.close);
+                priceData.push(currentPrice);
+
