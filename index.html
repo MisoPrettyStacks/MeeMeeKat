@@ -3,186 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TCT Memecoin Mass Analyzer</title>
+    <title>TCT Memecoin Terminal Quantum-v3</title>
     <!-- Tailwind CSS for modern dark-mode styling -->
     <script src="https://jsdelivr.net"></script>
     <!-- Chart.js for data visualization -->
     <script src="https://jsdelivr.net"></script>
+    <style>
+        @keyframes pulse-fast {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .animate-pulse-fast { animation: pulse-fast 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+    </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans min-h-screen p-6">
 
-    <div class="max-w-6xl mx-auto space-y-6">
+    <div class="max-w-7xl mx-auto space-y-6">
         <!-- Header -->
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-6 gap-4">
+        <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center border-b border-slate-800 pb-6 gap-4">
             <div>
-                <h1 class="text-2xl font-black text-amber-400 tracking-tight flex items-center gap-2">➡️ Temporal Composition Theory Analyzer</h1>
-                <p class="text-slate-400 text-sm">Calculates real-time token structural mass and entropic decay limits.</p>
+                <h1 class="text-2xl font-black text-amber-400 tracking-tight flex items-center gap-2">➡️ TCT Memecoin Predictive Terminal</h1>
+                <p class="text-slate-400 text-sm">Real-time temporal mass tracking, browser persistent caching, and alpha accumulation scanning.</p>
             </div>
-            <div class="flex gap-2 w-full md:w-auto">
-                <input id="tokenAddress" type="text" placeholder="Enter Solana Token Mint Address..." 
-                       value="6p6H7JgYbdS29yS1WdhYmo7Q2g1v9cZgB3DDB8m9pump" 
-                       class="bg-slate-900 border border-slate-700 px-4 py-2 rounded-lg text-sm focus:outline-none focus:border-amber-400 flex-1 md:w-80">
-                <button onclick="analyzeToken()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-5 py-2 rounded-lg text-sm transition cursor-pointer">Analyze</button>
+            <div class="flex flex-col sm:flex-row gap-2 w-full lg:w-auto">
+                <input id="tokenAddress" type="text" placeholder="Enter Token Mint Address..." 
+                       class="bg-slate-900 border border-slate-700 px-4 py-2 rounded-lg text-sm focus:outline-none focus:border-amber-400 w-full sm:w-80">
+                <button onclick="addTokenToWatchlist()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-5 py-2 rounded-lg text-sm transition cursor-pointer whitespace-nowrap">+ Add to Watchlist</button>
             </div>
         </header>
 
-        <!-- Main Dashboard Widgets -->
-        <main class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Metrics Panel -->
-            <section class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-                <h2 class="text-md font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">📊 Live Force Metrics</h2>
-                
-                <div class="p-4 bg-slate-950 rounded-lg border border-slate-850">
-                    <span class="text-xs text-slate-400 block mb-1">TCT System Status</span>
-                    <div id="statusBadge" class="text-md font-black uppercase text-slate-500">Awaiting Input...</div>
+        <!-- Layout Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            
+            <!-- Left Side: Watchlist Component -->
+            <aside class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4 lg:col-span-1">
+                <div class="flex justify-between items-center">
+                    <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider">📋 Token Watchlist</h2>
+                    <button onclick="clearWatchlist()" class="text-[10px] uppercase tracking-wider text-rose-400 hover:text-rose-300 font-bold cursor-pointer">Clear Cache</button>
                 </div>
+                <div id="watchlistContainer" class="space-y-2 max-h-[550px] overflow-y-auto pr-1">
+                    <!-- Dynamic Watchlist Items Inject Here -->
+                </div>
+            </aside>
 
-                <div class="grid grid-cols-2 gap-3">
-                    <div class="p-3 bg-slate-950 rounded-lg">
-                        <span class="text-xs text-slate-400 block">Temporal Mass</span>
-                        <span id="metricMass" class="text-lg font-bold text-amber-400">-</span>
+            <!-- Right Side: Focus Token Analytics Matrix -->
+            <main class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:col-span-3">
+                <!-- Metrics and Risk Panel -->
+                <section class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-5">
+                    <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider">📊 Target Analytics</h2>
+                    
+                    <div class="p-4 bg-slate-950 rounded-lg border border-slate-850 space-y-2">
+                        <span class="text-xs text-slate-400 block text-center mb-1">TCT Model Boundary Signal</span>
+                        <div id="statusBadge" class="text-xs font-black uppercase text-slate-500 text-center py-2 rounded">No Token Selected</div>
+                        <div id="alphaBadge" class="hidden text-xs font-black uppercase text-emerald-400 bg-emerald-950/60 border border-emerald-500/40 p-2 rounded text-center animate-pulse-fast">⚡ Alpha Ramp Identified</div>
                     </div>
-                    <div class="p-3 bg-slate-950 rounded-lg">
-                        <span class="text-xs text-slate-400 block">Entropy Vector</span>
-                        <span id="metricEntropy" class="text-lg font-bold text-rose-400">-</span>
+
+                    <!-- Whale Risk Feature -->
+                    <div class="p-4 bg-slate-950 rounded-lg border border-slate-850 space-y-3">
+                        <div class="flex justify-between items-center">
+                            <span class="text-xs font-bold text-rose-400 uppercase tracking-wide">🐳 Whale Risk Profiler</span>
+                            <span id="concentrationVal" class="text-xs font-mono bg-rose-950 text-rose-300 px-2 py-0.5 rounded border border-rose-900/50">45%</span>
+                        </div>
+                        <input id="concentrationSlider" type="range" min="5" max="95" value="45" oninput="updateConcentration(this.value)"
+                               class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-rose-500">
+                        <p class="text-[11px] text-slate-400 leading-tight">Simulates supply dominance of top 10 wallets. High concentration weights compound the entropic decay velocity parameter.</p>
                     </div>
-                </div>
 
-                <div class="space-y-2 border-t border-slate-800 pt-4 text-sm">
-                    <div class="flex justify-between"><span class="text-slate-400">Token Name:</span><span id="tokName" class="font-semibold">-</span></div>
-                    <div class="flex justify-between"><span class="text-slate-400">Price USD:</span><span id="tokPrice" class="font-semibold">-</span></div>
-                    <div class="flex justify-between"><span class="text-slate-400">24h Vol:</span><span id="tokVol" class="font-semibold">-</span></div>
-                    <div class="flex justify-between"><span class="text-slate-400">Liquidity Depth:</span><span id="tokLiq" class="font-semibold">-</span></div>
-                </div>
-            </section>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="p-3 bg-slate-950 rounded-lg">
+                            <span class="text-xs text-slate-400 block">Calculated Mass</span>
+                            <span id="metricMass" class="text-md font-bold text-amber-400">-</span>
+                        </div>
+                        <div class="p-3 bg-slate-950 rounded-lg">
+                            <span class="text-xs text-slate-400 block">Total Entropy</span>
+                            <span id="metricEntropy" class="text-md font-bold text-rose-400">-</span>
+                        </div>
+                    </div>
 
-            <!-- Chart Panel -->
-            <section class="md:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5">
-                <h2 class="text-md font-bold text-slate-300 uppercase tracking-wider mb-4 flex items-center gap-2">📈 High Entropy vs Coherence Mapping</h2>
-                <div class="h-64 w-full flex items-center justify-center relative">
-                    <canvas id="tctChart"></canvas>
-                </div>
-            </section>
-        </main>
+                    <div class="space-y-2 border-t border-slate-800 pt-4 text-xs">
+                        <div class="flex justify-between"><span class="text-slate-400">Selected Asset:</span><span id="tokName" class="font-semibold text-slate-200">-</span></div>
+                        <div class="flex justify-between"><span class="text-slate-400">Price USD:</span><span id="tokPrice" class="font-semibold text-slate-200">-</span></div>
+                        <div class="flex justify-between"><span class="text-slate-400">24h Vol:</span><span id="tokVol" class="font-semibold text-slate-200">-</span></div>
+                        <div class="flex justify-between"><span class="text-slate-400">Liquidity Depth:</span><span id="tokLiq" class="font-semibold text-slate-200">-</span></div>
+                    </div>
+                </section>
+
+                <!-- Chart Visualization Panel -->
+                <section class="md:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+                    <h2 class="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">📈 High Entropy vs Coherence Mapping</h2>
+                    <div class="h-72 w-full relative flex items-center justify-center">
+                        <canvas id="tctChart"></canvas>
+                    </div>
+                </section>
+            </main>
+        </div>
     </div>
 
     <script>
         let chartInstance = null;
+        let activeTokenAddress = "";
+        let globalTokenCache = {};
+        let reportedDecayStates = {}; // Tracking variable states to prevent continuous alarm loops
+        
+        // Persistent Memory LocalStorage Configuration Matrix
+        let watchlistAddresses = JSON.parse(localStorage.getItem('tct_watchlist')) || [
+            "6p6H7JgYbdS29yS1WdhYmo7Q2g1v9cZgB3DDB8m9pump" // Fartcoin seed initialization entry
+        ];
 
-        async function analyzeToken() {
-            const address = document.getElementById('tokenAddress').value.trim();
-            if(!address) return alert("Please enter a valid token address");
-
+        // Synthesize native audio waveforms to bypass external media requirements entirely
+        function playAlertTone(type) {
             try {
-                // Fetching entirely free public on-chain metrics from DexScreener API
-                const res = await fetch(`https://dexscreener.com{address}`);
-                const data = await res.json();
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
                 
-                if(!data.pairs || data.pairs.length === 0) {
-                    alert("Token pair profile not found on DexScreener.");
-                    return;
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                if (type === 'decay') {
+                    // Two-tone warning alarm
+                    oscillator.type = 'sawtooth';
+                    oscillator.frequency.setValueAtTime(440, audioCtx.currentTime);
+                    oscillator.frequency.setValueAtTime(220, audioCtx.currentTime + 0.12);
+                    gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.25);
+                } else if (type === 'alpha') {
+                    // High pitch pleasant signal sonar notification
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+                    oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.15);
+                    gainNode.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                    oscillator.start();
+                    oscillator.stop(audioCtx.currentTime + 0.2);
                 }
-
-                const pair = data.pairs[0];
-                
-                // Extract metrics to populate the TCT mathematical formula
-                const name = pair.baseToken.name + ` (${pair.baseToken.symbol})`;
-                const price = parseFloat(pair.priceUsd || 0);
-                const volume24h = parseFloat(pair.volume?.h24 || 0);
-                const liquidity = parseFloat(pair.liquidity?.usd || 0);
-                
-                const buys = parseFloat(pair.txns?.h24?.buys || 1);
-                const sells = parseFloat(pair.txns?.h24?.sells || 1);
-
-                // Compute Instantaneous Attention (\tau_k) and Entropic Decay (S)
-                const tau_k = volume24h * Math.log1p(buys);
-                const entropy = (sells / Math.max(buys, 1)) * 1.2; // Proxy concentration weight 1.2
-                
-                // Update text UI values
-                document.getElementById('tokName').innerText = name;
-                document.getElementById('tokPrice').innerText = '$' + price.toLocaleString(undefined, {maximumFractionDigits: 6});
-                document.getElementById('tokVol').innerText = '$' + volume24h.toLocaleString();
-                document.getElementById('tokLiq').innerText = '$' + liquidity.toLocaleString();
-                
-                // Assess system boundary state (Crossing 1.0 limit thresholds)
-                const badge = document.getElementById('statusBadge');
-                if (entropy >= 1.0) {
-                    badge.innerText = "⚠️ Terminal Decay Phase";
-                    badge.className = "text-md font-black uppercase text-rose-500 bg-rose-950/40 p-2 rounded border border-rose-900/50 text-center";
-                } else {
-                    badge.innerText = "✅ Accumulating Mass";
-                    badge.className = "text-md font-black uppercase text-emerald-400 bg-emerald-950/40 p-2 rounded border border-emerald-900/50 text-center";
-                }
-
-                // Model continuous timeline paths
-                generateTctChart(tau_k, entropy, pair.marketCap || (price * 1000000000));
-
-            } catch (err) {
-                console.error(err);
-                alert("Failed fetching free market telemetry data.");
+            } catch (e) {
+                console.warn("Audio Context blocked by browser permission loops.", e);
             }
         }
 
-        function generateTctChart(baseTau, targetEntropy, marketCap) {
-            const timeLabels = [];
-            const massData = [];
-            const entropyData = [];
-            
-            let currentMass = 1000; // Baseline structural tracking unit
-            const intervals = 24; 
-
-            for(let i = 0; i <= intervals; i++) {
-                timeLabels.push(`Hour ${i}`);
-                
-                // Replicate high-entropy memecoin lifecycle curve shapes
-                let timeFactor = i / 6;
-                let tau_t = baseTau * timeFactor * Math.exp(-0.6 * timeFactor);
-                let entropy_t = (targetEntropy * 0.3) + (targetEntropy * 0.12 * i);
-                
-                let deltaMass = tau_t * (1 - entropy_t);
-                currentMass = Math.max(0, currentMass + deltaMass);
-                
-                // Map out clean relational ratios relative to maximum scale indexes
-                massData.push(currentMass);
-                entropyData.push(entropy_t);
+        async function initTerminal() {
+            await refreshWatchlistData();
+            if (watchlistAddresses.length > 0) {
+                selectToken(watchlistAddresses[0]);
             }
+        }
 
-            document.getElementById('metricMass').innerText = massData[massData.length-1].toLocaleString(undefined, {maximumFractionDigits:0});
-            document.getElementById('metricEntropy').innerText = targetEntropy.toFixed(2);
-
-            // Destroy historical instance loops to prevent graph layout ghosting overlays
-            if(chartInstance) chartInstance.destroy();
-
-            const ctx = document.getElementById('tctChart').getContext('2d');
-            chartInstance = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: timeLabels,
-                    datasets: [
-                        {
-                            label: 'Temporal Mass (m)',
-                            data: massData,
-                            borderColor: '#fbbf24',
-                            backgroundColor: 'rgba(251, 191, 36, 0.05)',
-                            yAxisID: 'yMass',
-                            borderWidth: 3,
-                            tension: 0.3
-                        },
-                        {
-                            label: 'Entropy (η·S)',
-                            data: entropyData,
-                            borderColor: '#f43f5e',
-                            borderDash: [5, 5],
-                            yAxisID: 'yEntropy',
-                            borderWidth: 2,
-                            tension: 0.1
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        yMass: {
-                            type: 'linear',
-                            position: 'left',
+        async function refreshWatchlistData() {
+            if(watchlistAddresses.length === 0) return renderWatchlist();
+            
+            try {
+                const batchString = watchlistAddresses.join(',');
+                const res = await fetch(`https://dexscreener.com{batchString}`);
+                const data = await res.json();
+                
+                globalTokenCache = {};
+                if (data.pairs) {
+                    data.pairs.forEach(pair => {
+                        if(!globalTokenCache[pair.baseToken.address] || parseFloat(pair.liquidity?.usd || 0) > parseFloat(globalTokenCache[pair.baseToken.address].liquidity?.usd || 0)) {
