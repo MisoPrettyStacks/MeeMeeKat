@@ -309,7 +309,7 @@
                     }
                 }
 
-                processTctCalculations(chartData.reverse());
+                processTctCalculations(chartData);
                 status.innerText = "✅ EXECUTION VECTOR COMPLETE - REAL DATA";
                 status.className = "text-center font-black p-2 rounded text-xs bg-emerald-950/30 text-emerald-400 border border-emerald-900/50";
 
@@ -438,15 +438,11 @@
                 const forecastPrices4h = forecastData.slice(data.length);
                 const forecastLabels = generateForecastLabels(labels);
                 
-                // Reverse forecast to match reversed data display (newest/future on right)
-                const reversedForecastPrices = forecastPrices4h.reverse();
-                const reversedForecastLabels = forecastLabels.slice(labels.length).reverse();
-                
-                chartLabels = [...labels, null, ...reversedForecastLabels];
+                chartLabels = [...labels, null, ...forecastLabels.slice(labels.length)];
 
                 const extendedData = [...data];
                 extendedData.push(null);
-                extendedData.push(...reversedForecastPrices);
+                extendedData.push(...forecastPrices4h);
 
                 datasets.push({
                     label: '4H Forecast',
