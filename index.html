@@ -3,138 +3,204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TCT Live Production Engine</title>
+    <title>MeeMeeKat · Live crypto readings</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        :root { --ink:#0a0a0a; --mute:#6b6b6b; --line:#ececec; --soft:#f7f7f5; }
+        html { -webkit-text-size-adjust:100%; }
+        body { margin:0; background:#fff; color:var(--ink); font-family:'Instrument Sans',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif; font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased; }
+        .serif { font-family:'Instrument Serif',Georgia,'Times New Roman',serif; font-weight:400; letter-spacing:-0.01em; }
+        .card { background:#fff; border:1px solid var(--line); border-radius:22px; padding:26px; }
+        .soft { background:var(--soft); border-radius:14px; }
+        .field { border:1px solid #d6d6d6; border-radius:999px; padding:12px 20px; font:inherit; background:#fff; color:var(--ink); }
+        .field:focus { outline:2px solid var(--ink); outline-offset:1px; }
+        select.field { padding:12px 16px; }
+        .btn-dark, .btn-ghost { border-radius:999px; padding:12px 22px; font:inherit; font-weight:500; cursor:pointer; transition:background .15s, border-color .15s; }
+        .btn-dark { background:var(--ink); color:#fff; border:1px solid var(--ink); }
+        .btn-dark:hover { background:#2a2a2a; }
+        .btn-ghost { background:#fff; color:var(--ink); border:1px solid #d6d6d6; }
+        .btn-ghost:hover { border-color:var(--ink); }
+        .btn-dark:focus-visible, .btn-ghost:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+        .chip { border:1px solid #d6d6d6; border-radius:999px; padding:6px 12px; font:inherit; font-size:13px; background:#fff; color:var(--ink); cursor:pointer; }
+        .chip:hover { border-color:var(--ink); }
+        .chip.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+        table.clean { width:100%; border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums; }
+        table.clean th { font-weight:500; color:var(--mute); font-size:12.5px; text-align:left; padding:10px 14px; border-bottom:1px solid var(--line); white-space:nowrap; }
+        table.clean td { padding:12px 14px; border-bottom:1px solid #f2f2f2; white-space:nowrap; }
+        table.clean tbody tr:last-child td { border-bottom:0; }
+        dl.kv > div { display:flex; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid #f2f2f2; }
+        dl.kv > div:last-child { border-bottom:0; }
+        dl.kv dt { color:var(--mute); } dl.kv dd { margin:0; font-weight:500; font-variant-numeric:tabular-nums; text-align:right; }
+        .dot { width:9px; height:9px; border-radius:50%; display:inline-block; }
+        .note { color:var(--mute); font-size:13px; }
+        @media (prefers-reduced-motion:no-preference){ .card { transition:border-color .2s; } .card:hover { border-color:#dcdcdc; } }
+    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 font-mono min-h-screen p-6">
+<body>
 
-    <div id="disclaimerModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
-        <div class="bg-slate-900 border-2 border-amber-500 rounded-lg p-6 max-w-2xl max-h-96 overflow-y-auto shadow-2xl">
-            <div class="text-amber-400 text-center font-bold mb-4 text-lg">⚠️ Personal Research Experiment</div>
-            <div class="text-slate-300 text-xs space-y-3 mb-6">
-                <p><strong>Financial Disclaimer & Liability Waiver</strong></p>
-                <p><strong>Not a Tool or Service:</strong> This is a private, experimental sandbox. It is not a financial tool, software service, or product designed for public use.</p>
-                <p><strong>Not Financial Advice:</strong> The author is not a licensed financial advisor, accountant, or broker. Nothing in this repository constitutes professional financial, investment, or legal advice.</p>
-                <p><strong>No Warranties:</strong> This repository is provided "as-is" for display purposes only. The author makes no representations or warranties of any kind regarding the accuracy, completeness, or reliability of the data, code, or experimental models.</p>
-                <p><strong>Absolute Limitation of Liability:</strong> Under no circumstances shall the author be liable for any claims, damages, or financial losses (direct or indirect) if you violate these terms and attempt to use, replicate, or rely on any part of this experiment.</p>
+    <div id="disclaimerModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="background:rgba(10,10,10,.45)">
+        <div class="bg-white rounded-3xl p-8 max-w-xl w-full max-h-[85vh] overflow-y-auto shadow-2xl">
+            <h2 class="serif text-3xl mb-1">Personal research experiment</h2>
+            <p class="note mb-5">Please read before continuing.</p>
+            <div class="text-sm space-y-3 text-neutral-700 mb-7">
+                <p><strong class="text-neutral-900">Not a tool or service.</strong> This is a private, experimental sandbox. It is not a financial tool, software service, or product designed for public use.</p>
+                <p><strong class="text-neutral-900">Not financial advice.</strong> The author is not a licensed financial advisor, accountant, or broker. Nothing here constitutes professional financial, investment, or legal advice.</p>
+                <p><strong class="text-neutral-900">No warranties.</strong> Provided "as-is" for display purposes only. The author makes no representations or warranties regarding the accuracy, completeness, or reliability of the data, code, or experimental models.</p>
+                <p><strong class="text-neutral-900">Limitation of liability.</strong> Under no circumstances shall the author be liable for any claims, damages, or financial losses (direct or indirect) if you attempt to use, replicate, or rely on any part of this experiment.</p>
             </div>
-            <button onclick="acceptDisclaimer()" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold py-2 rounded transition cursor-pointer">OK</button>
+            <button onclick="acceptDisclaimer()" class="btn-dark w-full">I understand</button>
         </div>
     </div>
 
-    <div class="max-w-7xl mx-auto space-y-6">
-        <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center border-b border-slate-800 pb-4 gap-4">
-            <div>
-                <h1 class="text-xl font-black text-amber-400 tracking-tight">⚛️ TCT PRODUCTION MOTOR - MULTI-CHAIN LIVE DATA</h1>
-                <p class="text-xs text-slate-400">DexScreener (live price, volume, txns) + GeckoTerminal (1-minute OHLCV candles). No keys, no simulated history.</p>
+    <div class="max-w-6xl mx-auto px-5 sm:px-8 py-10 sm:py-14 space-y-8">
+
+        <header class="space-y-8">
+            <div class="flex flex-col gap-2">
+                <h1 class="serif text-5xl sm:text-6xl leading-none">MeeMeeKat</h1>
+                <p class="text-neutral-600 max-w-xl">Live crypto readings, short-term forecasts and Kalshi targets, built from one-minute candles and real trades.</p>
             </div>
-            <div class="flex gap-2 w-full lg:w-auto flex-wrap items-center">
-                <input id="tokenAddress" type="text" value="" placeholder="BTC, ETH, XRP, FET, VET, BONK or 0x address..."
-                       class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded text-xs flex-1 lg:flex-none lg:w-64 font-mono text-amber-400">
-                <select id="srcSel" class="bg-slate-900 border border-slate-700 text-slate-300 rounded px-1 py-1.5 text-xs" title="Where to look the ticker up">
-                    <option value="auto" selected>AUTO (exchange, then DEX)</option>
-                    <option value="cex">EXCHANGE ONLY (BTC, ETH, XRP...)</option>
-                    <option value="dex">DEX ONLY (memecoins)</option>
-                </select>
-                <button onclick="executeEngine()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-1.5 rounded text-xs transition cursor-pointer">FORCE RUN</button>
-                <button id="liveBtn" onclick="toggleLive()" class="bg-slate-800 border border-slate-700 text-slate-300 px-3 py-1.5 rounded text-xs cursor-pointer">⏸ PAUSE LIVE</button>
+            <div class="flex flex-col lg:flex-row gap-3 lg:items-center">
+                <input id="tokenAddress" type="text" value="" placeholder="Search a coin: BTC, ETH, XRP, FET, VET, BONK or a 0x address"
+                       class="field flex-1 min-w-0" aria-label="Ticker or token address" autocomplete="off">
+                <div class="flex flex-wrap gap-3">
+                    <select id="srcSel" class="field" title="Where to look the ticker up" aria-label="Data source">
+                        <option value="auto" selected>Auto (exchange, then DEX)</option>
+                        <option value="cex">Exchange only</option>
+                        <option value="dex">DEX only (memecoins)</option>
+                    </select>
+                    <button onclick="executeEngine()" class="btn-dark">Run</button>
+                    <button id="liveBtn" onclick="toggleLive()" class="btn-ghost">Pause live</button>
+                </div>
             </div>
         </header>
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            <section class="bg-slate-900 border border-slate-800 rounded-lg p-4 space-y-4">
+            <section class="card flex flex-col gap-6">
                 <div>
-                    <h2 class="text-xs font-black uppercase text-slate-400 tracking-wider mb-2">📊 Live Engine Telemetry</h2>
-                    <div id="engineStatus" class="text-center font-black p-2 rounded text-xs bg-slate-950 border border-slate-800">AWAITING TICKER...</div>
-                    <div id="feedMeta" class="text-[10px] text-slate-500 mt-1 text-center">-</div>
+                    <div class="flex items-center justify-between gap-3 flex-wrap">
+                        <h2 class="serif text-3xl">Snapshot</h2>
+                        <div id="engineStatus" class="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-neutral-100 text-neutral-700 border border-neutral-200">Waiting for a ticker</div>
+                    </div>
+                    <div id="feedMeta" class="note mt-2">–</div>
                 </div>
 
-                <div class="bg-slate-950 border border-slate-800 p-3 rounded space-y-1.5 text-xs">
-                    <span class="block font-bold border-b border-slate-800 pb-1 text-[11px] text-amber-400 uppercase">Asset Specifications</span>
-                    <div class="flex justify-between"><span>Label:</span><span id="statName" class="font-bold">-</span></div>
-                    <div class="flex justify-between"><span>Current Price:</span><span id="statPrice" class="font-bold text-sky-400">-</span></div>
-                    <div class="flex justify-between"><span>Liquidity Depth:</span><span id="statLiq" class="font-bold">-</span></div>
-                    <div class="flex justify-between"><span>24h TX Volume:</span><span id="statVol" class="font-bold">-</span></div>
-                    <div class="flex justify-between"><span>Txns 5m (B/S):</span><span id="statTx5" class="font-bold">-</span></div>
-                    <div class="flex justify-between"><span>Txns 1h (B/S):</span><span id="statTx1h" class="font-bold">-</span></div>
-                    <div class="flex justify-between"><span>Chain / DEX:</span><span id="statChain" class="font-bold text-purple-400">-</span></div>
+                <div>
+                    <div class="note">Asset</div>
+                    <div id="statName" class="text-lg font-semibold">–</div>
+                    <div id="statPrice" class="serif text-5xl mt-1" style="font-variant-numeric:tabular-nums">–</div>
                 </div>
 
-                <div class="space-y-2">
-                    <span class="block font-bold text-[11px] text-amber-400 uppercase">📐 Micro Mathematical Core (Latest 1m Bar)</span>
-                    <div class="grid grid-cols-2 gap-2 text-center text-xs">
-                        <div class="bg-slate-950 p-2 rounded border border-slate-800">
-                            <span class="text-[10px] text-slate-400 block">Attention Vector (τ_k)</span>
-                            <span id="calcTau" class="font-bold text-emerald-400">-</span>
+                <dl class="kv text-sm">
+                    <div><dt>Liquidity</dt><dd id="statLiq">–</dd></div>
+                    <div><dt>24h volume</dt><dd id="statVol">–</dd></div>
+                    <div><dt>Trades, 5 min (buys / sells)</dt><dd id="statTx5">–</dd></div>
+                    <div><dt>Trades, 1 hr (buys / sells)</dt><dd id="statTx1h">–</dd></div>
+                    <div><dt>Market</dt><dd id="statChain">–</dd></div>
+                </dl>
+
+                <div>
+                    <h3 class="font-semibold mb-3">Latest 1-minute reading</h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="soft p-4">
+                            <div class="note">Attention (τ)</div>
+                            <div id="calcTau" class="serif text-3xl text-emerald-700">–</div>
                         </div>
-                        <div class="bg-slate-950 p-2 rounded border border-slate-800">
-                            <span class="text-[10px] text-slate-400 block">System Entropy (η·S)</span>
-                            <span id="calcEntropy" class="font-bold text-rose-400">-</span>
+                        <div class="soft p-4">
+                            <div class="note">Entropy (η·S)</div>
+                            <div id="calcEntropy" class="serif text-3xl text-rose-600">–</div>
                         </div>
                     </div>
-                    <p class="text-[10px] text-slate-500">τ_k = candle volume ÷ trailing 30-bar average. η·S = red-volume ÷ green-volume over the last 10 bars (η = 1).</p>
+                    <p class="note mt-3">Attention is candle volume relative to the trailing 30-bar average. Entropy is red volume divided by green volume over the last 10 bars.</p>
                 </div>
 
-                <div class="space-y-2">
-                    <span class="block font-bold text-[11px] text-purple-400 uppercase">🔮 Predictive Outlook (Next Bar)</span>
-                    <div class="bg-slate-950 p-2 rounded border border-purple-800">
-                        <span class="text-[10px] text-slate-400 block">Forecasted State</span>
-                        <span id="predictedState" class="font-bold text-purple-300">CALCULATING...</span>
-                        <span id="forecastConfidence" class="text-[10px] text-slate-500 block mt-1">Confidence: -</span>
-                    </div>
+                <div class="soft p-4">
+                    <div class="note">Next-bar outlook</div>
+                    <div id="predictedState" class="text-lg font-semibold">Calculating…</div>
+                    <div id="forecastConfidence" class="note mt-1">Confidence: –</div>
                 </div>
             </section>
 
-            <section class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-lg p-4 flex flex-col justify-between">
-                <div class="flex justify-between items-center mb-2 flex-wrap gap-2">
-                    <h2 class="text-xs font-black uppercase text-slate-400 tracking-wider">📈 Live 1-Minute Chart Vector</h2>
-                    <div class="flex gap-2 items-center text-[10px] flex-wrap">
-                        <select id="windowSel" onchange="rerender()" class="bg-slate-950 border border-slate-700 text-slate-300 rounded px-1 py-1 text-[10px]">
-                            <option value="60">1H</option>
-                            <option value="180" selected>3H</option>
-                            <option value="360">6H</option>
-                            <option value="1440">24H</option>
+            <section class="card lg:col-span-2 flex flex-col gap-4">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h2 class="serif text-3xl">Price, 1-minute</h2>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <select id="windowSel" onchange="rerender()" class="chip" aria-label="Chart window">
+                            <option value="60">1 hour</option>
+                            <option value="180" selected>3 hours</option>
+                            <option value="360">6 hours</option>
+                            <option value="1440">24 hours</option>
                         </select>
-                        <button id="toggleForecast" onclick="toggleForecastMode()" class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-[10px] transition cursor-pointer">+ 30M EXTRAPOLATION</button>
-                        <div class="flex gap-3">
-                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#34d399]"></span> ALPHA RAMP</span>
-                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#f43f5e]"></span> TERMINAL DECAY</span>
-                            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#38bdf8]"></span> STABLE BALANCE</span>
-                        </div>
+                        <select id="fcSel" onchange="forecastMinutes=parseInt(this.value,10); if(lastMetrics.labels) renderChart(lastMetrics.labels,lastMetrics.prices,lastMetrics.colors)" class="chip" aria-label="Extrapolation length">
+                            <option value="1">+1 min</option><option value="5">+5 min</option><option value="15">+15 min</option><option value="30">+30 min</option><option value="60" selected>+1 hr</option>
+                        </select>
+                        <button id="toggleForecast" onclick="toggleForecastMode()" class="chip">Show extrapolation</button>
                     </div>
                 </div>
-                <div class="h-64 w-full relative">
-                    <canvas id="canvasEngine"></canvas>
+                <div class="flex flex-wrap gap-5 text-sm text-neutral-600">
+                    <span class="inline-flex items-center gap-2"><span class="dot" style="background:#0e9f6e"></span>Alpha ramp</span>
+                    <span class="inline-flex items-center gap-2"><span class="dot" style="background:#e11d48"></span>Terminal decay</span>
+                    <span class="inline-flex items-center gap-2"><span class="dot" style="background:#9ca3af"></span>Stable</span>
                 </div>
+                <div class="relative w-full" style="height:360px"><canvas id="canvasEngine"></canvas></div>
             </section>
         </div>
 
-        <section class="bg-slate-900 border border-slate-800 rounded-lg p-4">
-            <h2 class="text-xs font-black uppercase text-slate-400 tracking-wider mb-3">🧮 STEP-BY-STEP CALCULATION LOG MATRIX (latest 30 bars, newest first)</h2>
-            <div class="overflow-x-auto text-[11px]">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="border-b border-slate-800 text-slate-400 uppercase bg-slate-950/40">
-                            <th class="p-2">Time</th>
-                            <th class="p-2">Close (USD)</th>
-                            <th class="p-2">Volume (USD)</th>
-                            <th class="p-2">Green Vol % (10m)</th>
-                            <th class="p-2">Attention Force (τ_k)</th>
-                            <th class="p-2">Entropy Vector (η·S)</th>
-                            <th class="p-2">TCT Evaluation Resolution</th>
-                        </tr>
-                    </thead>
-                    <tbody id="matrixLogBody">
-                        <tr><td colspan="7" class="p-4 text-center text-slate-500">Awaiting vector run sequences...</td></tr>
-                    </tbody>
+        <section class="card">
+            <h2 class="serif text-3xl">Kalshi targets and signals</h2>
+            <p id="kalshiMeta" class="note mt-1 mb-5">Load XRP, BTC or ETH to detect the running Kalshi hourly market.</p>
+            <div class="overflow-x-auto">
+                <table class="clean">
+                    <thead><tr><th>Contract</th><th>YES bid / ask</th><th>Model P(yes)</th><th>Net edge, buy YES</th><th>Net edge, buy NO</th><th>Signal</th></tr></thead>
+                    <tbody id="kalshiBody"><tr><td colspan="6" class="text-neutral-500">No Kalshi data yet.</td></tr></tbody>
+                </table>
+            </div>
+            <p class="note mt-4">Net edge is the model's probability minus Kalshi's price minus an approximate taker fee (7% × p × (1−p)). Kalshi settles on its own reference price, which can differ from spot. Signals are model output, not advice.</p>
+        </section>
+
+        <section class="card">
+            <h2 class="serif text-3xl">Minute forecast</h2>
+            <p class="note mt-1 mb-5">Momentum and buy-pressure extrapolation from one-minute candles. The backtest column shows how often the same method called direction correctly on the loaded history, next to a naive "always up" baseline.</p>
+            <div class="overflow-x-auto">
+                <table class="clean">
+                    <thead><tr><th>Horizon</th><th>Target time</th><th>Projected price</th><th>Change</th><th>1σ range</th><th>Model P(up)</th><th>Backtest hit rate</th></tr></thead>
+                    <tbody id="forecastBody"><tr><td colspan="7" class="text-neutral-500">Run a ticker to see forecasts.</td></tr></tbody>
                 </table>
             </div>
         </section>
+
+        <section class="card">
+            <h2 class="serif text-3xl">Tick forecast</h2>
+            <p id="tickMeta" class="note mt-1 mb-5">Run a ticker to start the tick stream.</p>
+            <div class="overflow-x-auto">
+                <table class="clean">
+                    <thead><tr><th>Ahead</th><th>Approx. time</th><th>Projected price</th><th>Change</th><th>1σ range</th><th>Model P(up)</th><th>Backtest hit rate</th></tr></thead>
+                    <tbody id="tickBody"><tr><td colspan="7" class="text-neutral-500">Waiting for ticks.</td></tr></tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2 class="serif text-3xl">Calculation log</h2>
+            <p class="note mt-1 mb-5">The latest 30 one-minute bars, newest first.</p>
+            <div class="overflow-x-auto">
+                <table class="clean">
+                    <thead><tr><th>Time</th><th>Close (USD)</th><th>Volume (USD)</th><th>Green volume, 10 min</th><th>Attention (τ)</th><th>Entropy (η·S)</th><th>Reading</th></tr></thead>
+                    <tbody id="matrixLogBody"><tr><td colspan="7" class="text-neutral-500">Waiting for data.</td></tr></tbody>
+                </table>
+            </div>
+        </section>
+
+        <footer class="note pb-6">MeeMeeKat is a personal research experiment. Nothing on this page is financial advice.</footer>
     </div>
 
     <script>
+        Chart.defaults.font.family = "'Instrument Sans', system-ui, sans-serif";
+        Chart.defaults.color = '#6b6b6b';
         /* ================= CONFIG ================= */
         const DEX = "https://api.dexscreener.com";
         const GT = "https://api.geckoterminal.com/api/v2";
@@ -147,13 +213,14 @@
         const ETA = 1.0;                 // entropy coefficient
         const DEX_POLL_MS = 10000;       // DexScreener refresh
         const CANDLE_POLL_MS = 20000;    // GeckoTerminal refresh (free tier ~30 req/min)
-        const FORECAST_MINUTES = 30;
+        let forecastMinutes = 60;
+        const HORIZONS = [1, 5, 15, 30, 60];
 
-        const COLORS = { alpha:'#34d399', decay:'#f43f5e', stable:'#38bdf8' };
+        const COLORS = { alpha:'#0e9f6e', decay:'#e11d48', stable:'#9ca3af' };
         const STATE_LABEL = {
-            alpha:  ["📈 ALPHA RAMP ENGAGED", "text-emerald-400 bg-emerald-950/30 border border-emerald-900/40"],
-            decay:  ["📉 TERMINAL DECAY DETECTED", "text-rose-400 bg-rose-950/30 border border-rose-900/40"],
-            stable: ["⚖️ STABLE BALANCE", "text-sky-400 bg-sky-950/30 border border-sky-900/40"]
+            alpha:  ["Alpha ramp", "text-emerald-700 bg-emerald-50 border border-emerald-200"],
+            decay:  ["Terminal decay", "text-rose-600 bg-rose-50 border border-rose-200"],
+            stable: ["Stable", "text-neutral-900 bg-neutral-100 border border-neutral-200"]
         };
 
         /* ================= STATE ================= */
@@ -169,10 +236,10 @@
         const money = n => n == null || isNaN(n) ? "-" : "$" + Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
         const px = p => { p = Number(p); if (!p) return "-"; return "$" + p.toLocaleString(undefined, { maximumFractionDigits: p >= 1 ? 4 : 10 }); };
         const hhmm = sec => { const d = new Date(sec * 1000); return d.getHours().toString().padStart(2,'0') + ":" + d.getMinutes().toString().padStart(2,'0'); };
-        const setStatus = (txt, cls) => { const s = $('engineStatus'); s.innerText = txt; s.className = "text-center font-black p-2 rounded text-xs " + cls; };
-        const STATUS_AMBER = "bg-amber-950/30 text-amber-400 border border-amber-900/50";
-        const STATUS_GREEN = "bg-emerald-950/30 text-emerald-400 border border-emerald-900/50";
-        const STATUS_RED = "bg-rose-950/40 text-rose-500 border border-rose-900/50";
+        const setStatus = (txt, cls) => { const s = $('engineStatus'); s.innerText = txt; s.className = "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium " + cls; };
+        const STATUS_AMBER = "bg-amber-50 text-amber-700 border border-amber-200";
+        const STATUS_GREEN = "bg-emerald-50 text-emerald-700 border border-emerald-200";
+        const STATUS_RED = "bg-rose-50 text-rose-600 border border-rose-200";
 
         /* ================= API ================= */
         let dexOk = true;   // false → DexScreener unreachable, use GeckoTerminal pool stats instead
@@ -342,24 +409,83 @@
             const tauWeight = clamp(tau_k / 5);
             const alphaScore = tauWeight * 0.4 + (1 - entropyWeight) * 0.4 + buyRatio * 0.2;
             const decayScore = entropyWeight * 0.5 + (1 - tauWeight) * 0.3 + (1 - buyRatio) * 0.2;
-            if (alphaScore > decayScore + 0.1) return { predictedState: "📈 ALPHA RAMP INCOMING", confidence: Math.min(alphaScore * 100, 99).toFixed(1), cls: "text-emerald-400" };
-            if (decayScore > alphaScore + 0.1) return { predictedState: "📉 TERMINAL DECAY WARNING", confidence: Math.min(decayScore * 100, 99).toFixed(1), cls: "text-rose-400" };
-            return { predictedState: "⚖️ STABLE BALANCE EXPECTED", confidence: Math.min(Math.max(alphaScore, decayScore) * 80, 99).toFixed(1), cls: "text-sky-400" };
+            if (alphaScore > decayScore + 0.1) return { predictedState: "Alpha ramp incoming", confidence: Math.min(alphaScore * 100, 99).toFixed(1), cls: "text-emerald-700" };
+            if (decayScore > alphaScore + 0.1) return { predictedState: "Decay warning", confidence: Math.min(decayScore * 100, 99).toFixed(1), cls: "text-rose-600" };
+            return { predictedState: "Stable balance expected", confidence: Math.min(Math.max(alphaScore, decayScore) * 80, 99).toFixed(1), cls: "text-neutral-900" };
         }
 
-        // Deterministic momentum extrapolation (no random noise). Illustrative only.
-        function extrapolate(prices, minutes) {
-            const n = prices.length;
-            if (n < 12) return { pts: [], band: [] };
+        // ---- Forecast model (deterministic, uses only the last 31 closes + buy pressure) ----
+        function normCdf(x) {                       // Abramowitz-Stegun erf approximation
+            const t = 1 / (1 + 0.3275911 * Math.abs(x) / Math.SQRT2);
+            const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x / 2);
+            return 0.5 * (1 + (x < 0 ? -y : y));
+        }
+        // closes: at least 31 recent closes (oldest→newest); gp: green-volume share (0..1); h: minutes ahead
+        function forecastModel(closes, gp, h) {
+            const n = closes.length;
+            if (n < 31) return null;
             const rets = [];
-            for (let i = n - 10; i < n; i++) rets.push(Math.log(prices[i] / prices[i - 1]));
-            const drift = rets.reduce((a, b) => a + b, 0) / rets.length * 0.5;       // damped drift
-            const mu = rets.reduce((a, b) => a + b, 0) / rets.length;
-            const sigma = Math.sqrt(rets.reduce((a, b) => a + (b - mu) ** 2, 0) / rets.length);
+            for (let i = n - 30; i < n; i++) rets.push(Math.log(closes[i] / closes[i - 1]));
+            const mean = rets.reduce((a, b) => a + b, 0) / rets.length;
+            const sigma = Math.max(1e-6, Math.sqrt(rets.reduce((a, b) => a + (b - mean) ** 2, 0) / rets.length));
+            const lam = Math.pow(0.5, 1 / 10);       // EWMA drift, half-life 10 bars
+            let w = 1, sw = 0, sd = 0;
+            for (let k = rets.length - 1; k >= 0; k--) { sd += w * rets[k]; sw += w; w *= lam; }
+            const perMin = 0.5 * (sd / sw) + (gp - 0.5) * sigma * 0.3;   // damped momentum + buy-pressure tilt
+            const tau = 15, heff = tau * (1 - Math.exp(-h / tau));        // momentum decays over ~15 min
+            const mu = perMin * heff, sdH = sigma * Math.sqrt(h);
+            return { mu, sd: sdH, pUp: normCdf(mu / sdH) };
+        }
+
+        // Walk-forward check: how often did this exact method call direction right on loaded history?
+        function backtest(h) {
+            const closes = candles.map(c => c.c);
+            let hit = 0, up = 0, n = 0;
+            for (let i = 31; i + h < closes.length; i++) {
+                const m = forecastModel(closes.slice(i - 30, i + 1), series[i]?.greenPct ?? 0.5, h);
+                const actual = Math.log(closes[i + h] / closes[i]);
+                if (!m || actual === 0) continue;
+                n++;
+                if ((m.mu > 0) === (actual > 0)) hit++;
+                if (actual > 0) up++;
+            }
+            return n ? { hit: hit / n, base: Math.max(up, n - up) / n, n } : null;
+        }
+
+        function renderForecastTable() {
+            const body = $('forecastBody');
+            if (candles.length < 31 || !series.length) { body.innerHTML = '<tr><td colspan="7" class="p-3 text-center text-neutral-500">Not enough candles yet.</td></tr>'; return; }
+            const closes = candles.map(c => c.c).slice(-31);
+            const last = closes[closes.length - 1], gp = series[series.length - 1].greenPct, lastT = candles[candles.length - 1].t;
+            body.innerHTML = "";
+            HORIZONS.forEach(h => {
+                const m = forecastModel(closes, gp, h); if (!m) return;
+                const proj = last * Math.exp(m.mu), lo = last * Math.exp(m.mu - m.sd), hi = last * Math.exp(m.mu + m.sd);
+                const chg = (Math.exp(m.mu) - 1) * 100, bt = backtest(h);
+                const lbl = h === 60 ? "1 hr" : h + " min";
+                const row = document.createElement('tr');
+                row.className = "border-b border-neutral-100 hover:bg-neutral-50";
+                row.innerHTML = `
+                    <td class="p-2 font-bold text-neutral-900">${lbl}</td>
+                    <td class="p-2 text-neutral-500">${hhmm(lastT + h * 60)}</td>
+                    <td class="p-2 font-bold text-neutral-900">${px(proj)}</td>
+                    <td class="p-2 ${chg >= 0 ? 'text-emerald-700' : 'text-rose-600'}">${chg >= 0 ? '+' : ''}${chg.toFixed(3)}%</td>
+                    <td class="p-2 text-neutral-700">${px(lo)} – ${px(hi)}</td>
+                    <td class="p-2">${(m.pUp * 100).toFixed(0)}%</td>
+                    <td class="p-2 text-neutral-700">${bt ? `${(bt.hit * 100).toFixed(0)}% <span class="text-neutral-500">(baseline ${(bt.base * 100).toFixed(0)}%, n=${bt.n})</span>` : "-"}</td>`;
+                body.appendChild(row);
+            });
+        }
+
+        // Chart extrapolation path built from the same model
+        function extrapolate(prices, minutes) {
+            if (prices.length < 31 || !series.length) return { pts: [], band: [] };
+            const closes = prices.slice(-31), last = closes[closes.length - 1], gp = series[series.length - 1].greenPct;
             const pts = [], band = [];
             for (let k = 1; k <= minutes; k++) {
-                const p = prices[n - 1] * Math.exp(drift * k);
-                pts.push(p); band.push(p * sigma * Math.sqrt(k));
+                const m = forecastModel(closes, gp, k);
+                const p = last * Math.exp(m.mu);
+                pts.push(p); band.push(p * m.sd);
             }
             return { pts, band };
         }
@@ -406,18 +532,21 @@
             series.slice(-30).reverse().forEach(s => {
                 const [label, cls] = STATE_LABEL[s.state];
                 const row = document.createElement('tr');
-                row.className = "border-b border-slate-800 hover:bg-slate-800/40";
+                row.className = "border-b border-neutral-100 hover:bg-neutral-50";
                 row.innerHTML = `
-                    <td class="p-2 text-slate-400">${hhmm(s.t)}</td>
-                    <td class="p-2 font-bold text-sky-400">${px(s.close)}</td>
+                    <td class="p-2 text-neutral-500">${hhmm(s.t)}</td>
+                    <td class="p-2 font-bold text-neutral-900">${px(s.close)}</td>
                     <td class="p-2">${money(s.vol)}</td>
                     <td class="p-2">${(s.greenPct * 100).toFixed(0)}%</td>
-                    <td class="p-2 text-emerald-400">${s.tau.toFixed(3)}</td>
-                    <td class="p-2 text-rose-400">${s.entropy.toFixed(3)}</td>
-                    <td class="p-2"><span class="px-2 py-1 rounded text-xs ${cls}">${label}</span></td>`;
+                    <td class="p-2 text-emerald-700">${s.tau.toFixed(3)}</td>
+                    <td class="p-2 text-rose-600">${s.entropy.toFixed(3)}</td>
+                    <td class="p-2"><span class="px-2.5 py-0.5 rounded-full text-xs font-medium ${cls}">${label}</span></td>`;
                 body.appendChild(row);
             });
 
+            renderForecastTable();
+            viewTimes = view.map(s => s.t);
+            evaluateKalshi(); buildOverlay(); renderKalshi();
             renderChart(labels, prices, colors);
         }
 
@@ -426,36 +555,51 @@
             if (engineChart) engineChart.destroy();
             const dense = data.length > 200;
             const datasets = [{
-                label: 'Price (1m close)', data, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.05)',
+                label: 'Price (1m close)', data, borderColor: '#0a0a0a', backgroundColor: 'rgba(10,10,10,0.04)',
                 tension: 0.2, fill: true, pointBackgroundColor: colors, pointBorderColor: 'transparent',
                 pointRadius: dense ? 0 : 2.5, pointHoverRadius: 5, borderWidth: 2
             }];
             let chartLabels = [...labels];
 
             if (forecastMode && data.length >= 12) {
-                const { pts, band } = extrapolate(data, FORECAST_MINUTES);
+                const { pts, band } = extrapolate(data, forecastMinutes);
                 const lastT = series[series.length - 1].t;
                 const fLabels = pts.map((_, i) => hhmm(lastT + (i + 1) * 60));
                 chartLabels = [...labels, ...fLabels];
                 const pad = new Array(data.length - 1).fill(null);
                 const start = data[data.length - 1];
-                datasets.push({ label: 'Extrapolation', data: [...pad, start, ...pts], borderColor: '#a855f7', borderDash: [5,5],
+                datasets.push({ label: 'Extrapolation', data: [...pad, start, ...pts], borderColor: '#4f46e5', borderDash: [5,5],
                     borderWidth: 2, pointRadius: 0, tension: 0.2, fill: false });
                 datasets.push({ label: 'Upper (1σ)', data: [...pad, start, ...pts.map((p, i) => p + band[i])], borderColor: 'transparent',
-                    backgroundColor: 'rgba(168,85,247,0.15)', pointRadius: 0, fill: '+1' });
+                    backgroundColor: 'rgba(79,70,229,0.12)', pointRadius: 0, fill: '+1' });
                 datasets.push({ label: 'Lower (1σ)', data: [...pad, start, ...pts.map((p, i) => Math.max(0, p - band[i]))], borderColor: 'transparent',
                     backgroundColor: 'transparent', pointRadius: 0, fill: false });
             }
 
+            // invisible helper points so the y-axis always spans the Kalshi levels
+            const lv = [...overlay.lines.map(l => l.price)];
+            if (overlay.band) lv.push(overlay.band.lo, overlay.band.hi);
+            if (lv.length) {
+                const h = new Array(chartLabels.length).fill(null);
+                lv.forEach((v, i) => { if (i < h.length) h[i] = v; });
+                datasets.push({ label: '', data: h, showLine: false, pointRadius: 0, pointHoverRadius: 0 });
+            }
+            // buy/sell markers sitting on the price line
+            if (overlay.sigs.length) {
+                const sd = new Array(chartLabels.length).fill(null), st = [], rot = [], col = [];
+                overlay.sigs.forEach(sg => { sd[sg.idx] = sg.price; st[sg.idx] = sg.dir === 0 ? 'rectRot' : 'triangle'; rot[sg.idx] = sg.dir < 0 ? 180 : 0; col[sg.idx] = sg.dir > 0 ? '#0e9f6e' : sg.dir < 0 ? '#e11d48' : '#d97706'; });
+                datasets.push({ label: 'Signal', data: sd, showLine: false, pointStyle: st, rotation: rot, pointRadius: 9, pointHoverRadius: 11, pointBackgroundColor: col, pointBorderColor: '#ffffff' });
+            }
             engineChart = new Chart(ctx, {
                 type: 'line',
+                plugins: [kalshiPlugin],
                 data: { labels: chartLabels, datasets },
                 options: {
                     responsive: true, maintainAspectRatio: false, animation: false,
-                    plugins: { legend: { display: forecastMode, labels: { color: '#94a3b8', font: { size: 10 } } } },
+                    plugins: { legend: { display: forecastMode, labels: { color: '#6b6b6b', font: { size: 10 }, filter: i => i.text } }, tooltip: { filter: it => !!it.dataset.label } },
                     scales: {
-                        y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(51,65,85,0.3)' }, beginAtZero: false },
-                        x: { ticks: { color: '#94a3b8', font: { size: 10 }, maxTicksLimit: 12 }, grid: { display: false } }
+                        y: { ticks: { color: '#6b6b6b', font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.06)' }, beginAtZero: false },
+                        x: { ticks: { color: '#6b6b6b', font: { size: 10 }, maxTicksLimit: 12 }, grid: { display: false } }
                     }
                 }
             });
@@ -464,9 +608,8 @@
         function toggleForecastMode() {
             forecastMode = !forecastMode;
             const btn = $('toggleForecast');
-            btn.classList.toggle('ring-2', forecastMode);
-            btn.classList.toggle('ring-purple-500', forecastMode);
-            btn.textContent = forecastMode ? '✓ 30M EXTRAPOLATION ON' : '+ 30M EXTRAPOLATION';
+            btn.classList.toggle('on', forecastMode);
+            btn.textContent = forecastMode ? 'Hide extrapolation' : 'Show extrapolation';
             if (lastMetrics.labels) renderChart(lastMetrics.labels, lastMetrics.prices, lastMetrics.colors);
         }
 
@@ -476,7 +619,8 @@
             if (!input) return alert("Enter a ticker symbol or address (e.g. BONK)");
             const myRun = ++runId;
             stopLive();
-            setStatus("RESOLVING TICKER ACROSS CHAINS...", STATUS_AMBER);
+            stopTicks(); stopKalshi(); ticks = []; tickDirty = true; signals = [];
+            setStatus("Resolving ticker…", STATUS_AMBER);
             try {
                 const mode = $('srcSel').value;
                 const looksLikeAddress = /^(0x)?[0-9a-fA-F]{30,}$|^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(input);
@@ -496,7 +640,7 @@
                 renderDex();
 
                 const feedName = current.source === "dex" ? "GECKOTERMINAL" : current.source.toUpperCase();
-                setStatus(`LOADING 1-MINUTE CANDLES (${feedName})...`, STATUS_AMBER);
+                setStatus(`Loading 1-minute candles (${feedName.toLowerCase()})…`, STATUS_AMBER);
                 candles = [];
                 let before = null;
                 const maxPages = current.source === "coinbase" ? 5 : 2;
@@ -514,12 +658,14 @@
 
                 computeSeries();
                 rerender();
-                setStatus("✅ LIVE – REAL 1M CANDLES", STATUS_GREEN);
+                setStatus("Live · real 1-minute candles", STATUS_GREEN);
                 markUpdated();
                 startLive();
+                startTicks();
+                startKalshi();
             } catch (err) {
                 console.error(err);
-                setStatus(`ERROR: ${err.message}`, STATUS_RED);
+                setStatus(`Error: ${err.message}`, STATUS_RED);
             }
         }
 
@@ -541,7 +687,10 @@
                     const j = await getJson(`${GT}/networks/${current.net}/pools/${current.pairAddress}?include=base_token,quote_token,dex`, GT_HEADERS);
                     p = gtPoolToPair(j.data, j.included || []);
                 }
-                if (p) { current.pair = p; renderDex(); markUpdated(); }
+                if (p) {
+                    current.pair = p; renderDex(); markUpdated();
+                    if (current.source === "dex") pushTick(parseFloat(p.priceUsd), 0, null, Date.now());   // pseudo-tick
+                }
             } catch (e) { $('feedMeta').innerText = "Live stats: " + e.message; }
         }
 
@@ -568,9 +717,325 @@
 
         function toggleLive() {
             liveOn = !liveOn;
-            $('liveBtn').textContent = liveOn ? "⏸ PAUSE LIVE" : "▶ RESUME LIVE";
-            if (liveOn && current) { pollDex(); pollCandles(); startLive(); } else stopLive();
+            $('liveBtn').textContent = liveOn ? "Pause live" : "Resume live";
+            if (liveOn && current) { pollDex(); pollCandles(); startLive(); startTicks(); startKalshi(); } else { stopLive(); stopTicks(); stopKalshi(); }
         }
+
+        /* ================= KALSHI TARGETS + SIGNALS ================= */
+        const KALSHI_HOSTS = ["https://api.elections.kalshi.com/trade-api/v2", "https://external-api.kalshi.com/trade-api/v2"];
+        const KALSHI_SERIES = { XRP: ["KXXRPD", "KXXRP"], BTC: ["KXBTCD", "KXBTC"], ETH: ["KXETHD", "KXETH"] };   // [above/below, range]
+        const KALSHI_POLL_MS = 15000, MIN_EDGE = 0.08, KALSHI_FEE = 0.07;
+        let kalshi = null, kalshiTimer = null, kalshiRows = [], signals = [], viewTimes = [];
+        let overlay = { lines: [], band: null, sigs: [] };
+
+        const feeOf = x => KALSHI_FEE * x * (1 - x);
+        const etTime = ms => new Date(ms).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: "America/New_York" }) + " ET";
+
+        function normKalshi(m) {
+            const pr = k => m[k + "_dollars"] != null ? parseFloat(m[k + "_dollars"]) : (m[k] != null ? m[k] / 100 : null);
+            const lo = m.floor_strike, hi = m.cap_strike;
+            let type;
+            if (m.strike_type === "between" || (lo != null && hi != null)) type = "range";
+            else if (lo != null) type = "above";
+            else if (hi != null) type = "below";
+            else return null;
+            const yb = pr("yes_bid"), ya = pr("yes_ask");
+            return { ticker: m.ticker, type, lo, hi, yesBid: yb, yesAsk: ya, closeMs: Date.parse(m.close_time),
+                     label: type === "range" ? `$${lo} to $${hi}` : type === "above" ? `≥ $${lo}` : `< $${hi}` };
+        }
+
+        async function kalshiGet(path) {
+            let lastErr;
+            for (const host of KALSHI_HOSTS) {
+                try { return await getJson(host + path); } catch (e) { lastErr = e; }
+            }
+            throw lastErr;
+        }
+
+        async function fetchKalshi() {
+            const now = Math.floor(Date.now() / 1000), all = [];
+            for (const ser of KALSHI_SERIES[current.base]) {
+                const j = await kalshiGet(`/markets?series_ticker=${ser}&status=open&min_close_ts=${now}&max_close_ts=${now + 3900}&limit=200`);
+                (j.markets || []).forEach(m => { const n = normKalshi(m); if (n) all.push(n); });
+            }
+            if (!all.length) { kalshi = { close: null, markets: [] }; return; }
+            const close = Math.min(...all.map(m => m.closeMs));
+            kalshi = { close, markets: all.filter(m => Math.abs(m.closeMs - close) < 1000) };   // the market set running right now
+        }
+
+        const pAbove = (K, spot, mu, sd) => 1 - normCdf((Math.log(K / spot) - mu) / sd);
+
+        function evaluateKalshi() {
+            kalshiRows = [];
+            if (!kalshi || !kalshi.markets.length || candles.length < 31 || !series.length) return;
+            const minsLeft = (kalshi.close - Date.now()) / 60000;
+            if (minsLeft <= 0) return;
+            const closes = candles.map(c => c.c).slice(-31);
+            const lastT = ticks.length ? ticks[ticks.length - 1] : null;
+            const spot = lastT && Date.now() - lastT.t < 15000 && current.source !== "dex" ? lastT.p : closes[closes.length - 1];
+            const lastS = series[series.length - 1], gp = lastS.greenPct;
+            const h = Math.min(60, Math.max(1, Math.ceil(minsLeft)));
+            const m0 = forecastModel(closes, gp, h); if (!m0) return;
+            // Safeguards against overconfidence: use the larger of 30-bar and ~2h realized volatility, then widen by 25% for fat tails
+            const long = candles.map(c => c.c).slice(-121), lr = [];
+            for (let i = 1; i < long.length; i++) lr.push(Math.log(long[i] / long[i - 1]));
+            const lmean = lr.reduce((a, b) => a + b, 0) / (lr.length || 1);
+            const lsig = Math.sqrt(lr.reduce((a, b) => a + (b - lmean) ** 2, 0) / (lr.length || 1));
+            const m = { mu: m0.mu, sd: Math.max(m0.sd, lsig * Math.sqrt(h)) * 1.25 };
+            const clip = v => Math.min(0.98, Math.max(0.02, v));
+            const lean = (lastS.state === "alpha" ? 1 : lastS.state === "decay" ? -1 : 0) + (gp > 0.55 ? 1 : gp < 0.45 ? -1 : 0);
+            kalshi.meta = { minsLeft, spot, h, gp, state: lastS.state, lean };
+
+            kalshiRows = kalshi.markets.map(k => {
+                const p = clip(k.type === "above" ? pAbove(k.lo, spot, m.mu, m.sd)
+                        : k.type === "below" ? 1 - pAbove(k.hi, spot, m.mu, m.sd)
+                        : pAbove(k.lo, spot, m.mu, m.sd) - pAbove(k.hi, spot, m.mu, m.sd));
+                const ya = k.yesAsk, noAsk = k.yesBid != null ? 1 - k.yesBid : null;
+                const eYes = ya != null && ya > 0 ? p - ya - feeOf(ya) : null;
+                const eNo = noAsk != null && noAsk > 0 ? (1 - p) - noAsk - feeOf(noAsk) : null;
+                // price-exposure direction of each side: ABOVE-yes = up, BELOW-yes = down, RANGE = neutral
+                const yesDir = k.type === "above" ? 1 : k.type === "below" ? -1 : 0;
+                const tradable = x => x != null && x > 0.03 && x < 0.97;
+                let action = null, edge = 0, dir = 0, suspect = false;
+                const cand = [];
+                if (eYes != null && tradable(ya)) cand.push({ a: "BUY YES", e: eYes, d: yesDir });
+                if (eNo != null && tradable(noAsk)) cand.push({ a: "BUY NO", e: eNo, d: -yesDir });
+                cand.sort((x, y) => y.e - x.e);
+                if (cand[0] && cand[0].e > 0.30) suspect = true;   // edges this big usually mean model error or a stale quote
+                if (cand[0] && cand[0].e >= MIN_EDGE && !suspect && minsLeft >= 2) {
+                    const c = cand[0];
+                    const opposed = c.d !== 0 && Math.sign(c.d) === -Math.sign(lean) && lean !== 0;     // trade fights the chart reading
+                    if (!opposed || c.e >= 2 * MIN_EDGE) { action = c.a; edge = c.e; dir = c.d; }
+                }
+                return { ...k, p, eYes, eNo, action, edge, dir, suspect };
+            }).sort((a, b) => (a.lo ?? a.hi) - (b.lo ?? b.hi));
+
+            const best = kalshiRows.filter(r => r.action).sort((a, b) => b.edge - a.edge)[0];
+            if (best) {
+                const prev = signals[signals.length - 1];
+                const fresh = !prev || prev.ticker !== best.ticker || prev.action !== best.action || Date.now() - prev.at > 10 * 60000;
+                if (fresh) {
+                    const dirTxt = best.dir > 0 ? "BUY" : best.dir < 0 ? "SELL" : "RANGE";
+                    signals.push({ at: Date.now(), t: candles[candles.length - 1].t, ticker: best.ticker, action: best.action, dir: best.dir,
+                                   price: spot, text: `${dirTxt}: ${best.action} ${best.label}`, edge: best.edge });
+                    if (signals.length > 25) signals.shift();
+                }
+            }
+        }
+
+        function buildOverlay() {
+            overlay = { lines: [], band: null, sigs: [] };
+            if (!kalshiRows.length || !kalshi.meta) return;
+            const spot = kalshi.meta.spot;
+            const dirs = kalshiRows.filter(r => r.type !== "range");
+            const strikes = dirs.map(r => ({ price: r.type === "above" ? r.lo : r.hi, row: r })).sort((a, b) => a.price - b.price);
+            const below = strikes.filter(x => x.price <= spot).pop(), above = strikes.find(x => x.price > spot);
+            const yesPct = r => r.yesBid != null && r.yesAsk != null ? Math.round((r.yesBid + r.yesAsk) * 50) + "¢" : "–";
+            [below, above].forEach(x => x && overlay.lines.push({ price: x.price, color: "#d97706", dash: [6, 4], label: `Kalshi ${x.row.label} (YES ${yesPct(x.row)})` }));
+            // market-implied median: strike where Kalshi's yes mid crosses 50% on the above-markets
+            const ups = dirs.filter(r => r.type === "above" && r.yesBid != null && r.yesAsk != null).map(r => ({ k: r.lo, y: (r.yesBid + r.yesAsk) / 2 })).sort((a, b) => a.k - b.k);
+            for (let i = 1; i < ups.length; i++) {
+                if (ups[i - 1].y >= 0.5 && ups[i].y < 0.5) {
+                    const f = (ups[i - 1].y - 0.5) / (ups[i - 1].y - ups[i].y);
+                    overlay.lines.push({ price: ups[i - 1].k + f * (ups[i].k - ups[i - 1].k), color: "#0891b2", dash: [2, 3], label: "Kalshi-implied median" });
+                    break;
+                }
+            }
+            const ranges = kalshiRows.filter(r => r.type === "range");
+            const bucket = ranges.find(r => spot >= r.lo && spot <= r.hi) || ranges.slice().sort((a, b) => ((b.yesBid + b.yesAsk) || 0) - ((a.yesBid + a.yesAsk) || 0))[0];
+            if (bucket) overlay.band = { lo: bucket.lo, hi: bucket.hi, label: `Kalshi range $${bucket.lo}–$${bucket.hi} (YES ${yesPct(bucket)})` };
+            // map stored signals onto the visible window
+            signals.forEach(sg => {
+                const idx = viewTimes.indexOf(sg.t);
+                if (idx >= 0) overlay.sigs.push({ idx, price: sg.price, dir: sg.dir, text: sg.text });
+            });
+        }
+
+        const kalshiPlugin = {
+            id: "kalshi",
+            afterDatasetsDraw(chart) {
+                const y = chart.scales.y, x = chart.scales.x, a = chart.chartArea;
+                if (!y || !a) return;
+                const ctx = chart.ctx;
+                ctx.save();
+                ctx.font = "11.5px 'Instrument Sans', system-ui, sans-serif";
+                if (overlay.band) {
+                    const y1 = y.getPixelForValue(overlay.band.hi), y2 = y.getPixelForValue(overlay.band.lo);
+                    const top = Math.max(a.top, Math.min(y1, y2)), bot = Math.min(a.bottom, Math.max(y1, y2));
+                    if (bot > top) {
+                        ctx.fillStyle = "rgba(217,119,6,0.08)"; ctx.fillRect(a.left, top, a.right - a.left, bot - top);
+                        ctx.fillStyle = "#b45309"; ctx.textAlign = "left"; ctx.fillText(overlay.band.label, a.left + 4, top + 11);
+                    }
+                }
+                overlay.lines.forEach(l => {
+                    const yy = y.getPixelForValue(l.price);
+                    if (yy < a.top || yy > a.bottom) return;
+                    ctx.strokeStyle = l.color; ctx.fillStyle = l.color; ctx.lineWidth = 1.2; ctx.setLineDash(l.dash);
+                    ctx.beginPath(); ctx.moveTo(a.left, yy); ctx.lineTo(a.right, yy); ctx.stroke();
+                    ctx.setLineDash([]); ctx.textAlign = "right"; ctx.fillText(l.label, a.right - 4, yy - 3);
+                });
+                overlay.sigs.forEach(s => {
+                    const xx = x.getPixelForValue(s.idx), yy = y.getPixelForValue(s.price);
+                    if (yy < a.top || yy > a.bottom) return;
+                    ctx.fillStyle = s.dir > 0 ? "#0e9f6e" : s.dir < 0 ? "#e11d48" : "#b45309";
+                    ctx.textAlign = xx > a.right - 150 ? "right" : "left";
+                    ctx.fillText(s.text, xx + (ctx.textAlign === "left" ? 10 : -10), yy + (s.dir < 0 ? 16 : -10));
+                });
+                ctx.restore();
+            }
+        };
+
+        function renderKalshi() {
+            const meta = $('kalshiMeta'), body = $('kalshiBody');
+            if (!current?.base || !KALSHI_SERIES[current.base]) {
+                meta.innerText = "Kalshi lists hourly price markets for XRP, BTC and ETH. Load one of those to see targets and signals.";
+                body.innerHTML = '<tr><td colspan="6" class="p-3 text-center text-neutral-500">No Kalshi market for this asset.</td></tr>';
+                return;
+            }
+            if (!kalshi) return;
+            if (!kalshi.markets.length || !kalshi.meta) {
+                meta.innerText = kalshi.markets.length ? "Waiting for enough candles..." : "No open Kalshi hourly market found right now (between windows, or markets paused).";
+                return;
+            }
+            const m = kalshi.meta;
+            const alignTxt = m.lean > 0 ? "bullish" : m.lean < 0 ? "bearish" : "neutral";
+            meta.innerText = `Settles ${etTime(kalshi.close)} (in ${m.minsLeft.toFixed(0)} min) · spot ${px(m.spot)} · model horizon ${m.h}m · chart reading ${alignTxt} (TCT ${m.state}, ${(m.gp * 100).toFixed(0)}% buy volume)`;
+            body.innerHTML = "";
+            const c = v => v == null ? "-" : (v * 100).toFixed(0) + "¢";
+            const e = v => v == null ? "-" : `<span class="${v >= MIN_EDGE ? "text-emerald-700 font-bold" : v < 0 ? "text-neutral-500" : "text-neutral-700"}">${(v * 100).toFixed(1)}%</span>`;
+            kalshiRows.forEach(r => {
+                const tr = document.createElement("tr");
+                tr.className = "border-b border-neutral-100 hover:bg-neutral-50" + (r.action ? " bg-amber-50" : "");
+                const sig = r.suspect ? '<span class="text-neutral-500" title="Edge over 30% usually means model error or a stale quote">⚠ check</span>' : r.action ? `<span class="${r.dir > 0 ? "text-emerald-700" : r.dir < 0 ? "text-rose-600" : "text-amber-700"} font-bold">${r.dir > 0 ? "▲ BUY" : r.dir < 0 ? "▼ SELL" : "◆"} · ${r.action}</span>` : '<span class="text-neutral-400">hold</span>';
+                tr.innerHTML = `<td class="p-2">${r.label} <span class="text-neutral-400">${r.type}</span></td>
+                    <td class="p-2">${c(r.yesBid)} / ${c(r.yesAsk)}</td><td class="p-2">${(r.p * 100).toFixed(0)}%</td>
+                    <td class="p-2">${e(r.eYes)}</td><td class="p-2">${e(r.eNo)}</td><td class="p-2">${sig}</td>`;
+                body.appendChild(tr);
+            });
+        }
+
+        async function pollKalshi() {
+            if (!current?.base || !KALSHI_SERIES[current.base] || !liveOn || document.hidden) return;
+            try { await fetchKalshi(); evaluateKalshi(); renderKalshi(); rerender(); }
+            catch (e) { $('kalshiMeta').innerText = "Kalshi: " + e.message; }
+        }
+        function stopKalshi() { clearInterval(kalshiTimer); kalshiTimer = null; }
+        function startKalshi() {
+            stopKalshi(); kalshi = null; kalshiRows = []; overlay = { lines: [], band: null, sigs: [] };
+            if (!current?.base || !KALSHI_SERIES[current.base]) { renderKalshi(); return; }
+            $('kalshiMeta').innerText = "Looking up the running Kalshi hourly market...";
+            pollKalshi(); kalshiTimer = setInterval(pollKalshi, KALSHI_POLL_MS);
+        }
+
+        /* ================= TICK STREAM + TICK FORECAST ================= */
+        const TICK_HORIZONS = [1, 5, 10, 25, 50, 100];
+        let ws = null, ticks = [], tickDirty = false, tickRun = 0;
+
+        function pushTick(p, q, buy, t) {
+            if (!p || isNaN(p)) return;
+            ticks.push({ t: t || Date.now(), p, q: q || 0, buy });   // buy: true=taker buy, false=taker sell, null=unknown
+            if (ticks.length > 1500) ticks.shift();
+            tickDirty = true;
+        }
+        function stopTicks() { tickRun++; if (ws) { try { ws.close(); } catch (e) {} ws = null; } }
+
+        function startTicks() {
+            stopTicks();
+            if (!current || !liveOn) return;
+            const myTick = tickRun, c = current;
+            if (c.source === "dex") { $('tickMeta').innerText = "DEX pools have no tick stream: each ~10s price poll is used as a pseudo-tick, so this table needs a few minutes to fill."; return; }
+            let url, onOpen = null;
+            if (c.source === "coinbase") {
+                url = "wss://ws-feed.exchange.coinbase.com";
+                onOpen = sk => sk.send(JSON.stringify({ type: "subscribe", product_ids: [c.id], channels: ["matches"] }));
+            } else {
+                const host = c.source === "binanceus" ? "wss://stream.binance.us:9443" : "wss://stream.binance.com:9443";
+                url = `${host}/ws/${c.id.toLowerCase()}@trade`;
+            }
+            let sock;
+            try { sock = new WebSocket(url); } catch (e) { $('tickMeta').innerText = "Could not open tick stream: " + e.message; return; }
+            ws = sock;
+            sock.onopen = () => { if (onOpen) onOpen(sock); $('tickMeta').innerText = "Tick stream connected, waiting for trades..."; };
+            sock.onmessage = ev => {
+                try {
+                    const m = JSON.parse(ev.data);
+                    if (c.source === "coinbase") {
+                        // maker side "sell" means a taker bought
+                        if (m.type === "match" || m.type === "last_match") pushTick(parseFloat(m.price), parseFloat(m.size), m.side === "sell", Date.parse(m.time));
+                    } else if (m.e === "trade") {
+                        pushTick(+m.p, +m.q, !m.m, m.T);   // m = buyer is maker, i.e. taker sold
+                    }
+                } catch (e) { /* ignore non-trade frames */ }
+            };
+            sock.onerror = () => { $('tickMeta').innerText = "Tick stream error (a blocker may be stopping WebSockets). Retrying..."; };
+            sock.onclose = () => { if (myTick === tickRun && liveOn) setTimeout(() => { if (myTick === tickRun) startTicks(); }, 3000); };
+        }
+
+        // Tick model: lag-1 return autocorrelation (bid-ask bounce / reversion) + recent order-flow imbalance.
+        function tickModel(win, h) {
+            const n = win.length;
+            if (n < 31) return null;
+            const r = [];
+            for (let i = 1; i < n; i++) r.push(Math.log(win[i].p / win[i - 1].p));
+            let num = 0, den = 0;
+            for (let i = 1; i < r.length; i++) { num += r[i] * r[i - 1]; }
+            r.forEach(x => den += x * x);
+            const rho = den > 0 ? Math.max(-0.8, Math.min(0.8, num / den)) : 0;
+            const sigma = Math.max(1e-7, Math.sqrt(den / r.length));
+            let b = 0, sl = 0;
+            win.slice(-50).forEach(x => { if (x.buy === true) b += x.q; else if (x.buy === false) sl += x.q; });
+            const imb = b + sl > 0 ? (b - sl) / (b + sl) : 0;
+            const geo = (1 - Math.pow(rho, h)) / (1 - rho);
+            const mu = r[r.length - 1] * rho * geo + imb * sigma * 0.3 * Math.min(h, 10);
+            const sd = sigma * Math.sqrt(h);
+            return { mu, sd, pUp: normCdf(mu / sd), rho, imb };
+        }
+
+        function tickBacktest(h) {
+            const t = ticks.slice(-1000);
+            let hit = 0, up = 0, dn = 0, n = 0;
+            for (let i = 30; i + h < t.length; i++) {
+                const m = tickModel(t.slice(Math.max(0, i - 199), i + 1), h);
+                const act = Math.log(t[i + h].p / t[i].p);
+                if (!m || act === 0 || m.mu === 0) continue;
+                n++; act > 0 ? up++ : dn++;
+                if ((m.mu > 0) === (act > 0)) hit++;
+            }
+            return n ? { hit: hit / n, base: Math.max(up, dn) / n, n } : null;
+        }
+
+        function renderTickTable() {
+            const body = $('tickBody');
+            if (ticks.length < 31) {
+                body.innerHTML = `<tr><td colspan="7" class="p-3 text-center text-neutral-500">Collected ${ticks.length} of 31 ticks needed...</td></tr>`;
+                return;
+            }
+            const win = ticks.slice(-200), last = win[win.length - 1].p;
+            const span = (win[win.length - 1].t - win[0].t) / 1000;
+            const rate = span > 0 ? (win.length - 1) / span : 0;        // ticks per second
+            const m1 = tickModel(win, 1);
+            $('tickMeta').innerText = `${current?.source === "dex" ? "Pseudo-ticks (polls)" : "Live trades"}: ${ticks.length} buffered · ${rate.toFixed(2)} ticks/s · last ${px(last)} · reversion ρ ${m1.rho.toFixed(2)} · order-flow imbalance ${(m1.imb * 100).toFixed(0)}% buy`;
+            body.innerHTML = "";
+            TICK_HORIZONS.forEach(h => {
+                const m = tickModel(win, h); if (!m) return;
+                const proj = last * Math.exp(m.mu), lo = last * Math.exp(m.mu - m.sd), hi = last * Math.exp(m.mu + m.sd);
+                const chg = (Math.exp(m.mu) - 1) * 100, bt = tickBacktest(h);
+                const secs = rate > 0 ? h / rate : null;
+                const eta = secs == null ? "-" : secs < 90 ? `~${secs.toFixed(0)}s` : `~${(secs / 60).toFixed(1)}m`;
+                const row = document.createElement('tr');
+                row.className = "border-b border-neutral-100 hover:bg-neutral-50";
+                row.innerHTML = `
+                    <td class="p-2 font-bold text-neutral-900">${h} tick${h > 1 ? "s" : ""}</td>
+                    <td class="p-2 text-neutral-500">${eta}</td>
+                    <td class="p-2 font-bold text-neutral-900">${px(proj)}</td>
+                    <td class="p-2 ${chg >= 0 ? 'text-emerald-700' : 'text-rose-600'}">${chg >= 0 ? '+' : ''}${chg.toFixed(4)}%</td>
+                    <td class="p-2 text-neutral-700">${px(lo)} – ${px(hi)}</td>
+                    <td class="p-2">${(m.pUp * 100).toFixed(0)}%</td>
+                    <td class="p-2 text-neutral-700">${bt ? `${(bt.hit * 100).toFixed(0)}% <span class="text-neutral-500">(baseline ${(bt.base * 100).toFixed(0)}%, n=${bt.n})</span>` : "-"}</td>`;
+                body.appendChild(row);
+            });
+        }
+        setInterval(() => { if (tickDirty) { tickDirty = false; renderTickTable(); } }, 1000);
 
         $('tokenAddress').addEventListener('keydown', e => { if (e.key === 'Enter') executeEngine(); });
     </script>
