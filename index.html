@@ -4,12 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TCT Live Production Engine</title>
-    <!-- Tailwind CSS for scannability and structural styling -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Chart.js for absolute visualization control -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- TensorFlow.js for predictive modeling -->
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body class="bg-slate-950 text-slate-100 font-mono min-h-screen p-6">
 
@@ -28,40 +24,41 @@
     </div>
 
     <div class="max-w-7xl mx-auto space-y-6">
-        <!-- Control Header -->
         <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center border-b border-slate-800 pb-4 gap-4">
             <div>
-                <h1 class="text-xl font-black text-amber-400 tracking-tight">⚛️ TCT PRODUCTION MOTOR - MULTI-CHAIN REAL DATA</h1>
-                <p class="text-xs text-slate-400">Zero simulation placeholders. Works on ANY chain - Solana, Ethereum, Base, Arbitrum, Polygon, etc.</p>
+                <h1 class="text-xl font-black text-amber-400 tracking-tight">⚛️ TCT PRODUCTION MOTOR - MULTI-CHAIN LIVE DATA</h1>
+                <p class="text-xs text-slate-400">DexScreener (live price, volume, txns) + GeckoTerminal (1-minute OHLCV candles). No keys, no simulated history.</p>
             </div>
-            <div class="flex gap-2 w-full lg:w-auto flex-wrap">
-                <input id="tokenAddress" type="text" value="" placeholder="Enter ticker (e.g. PUMP, ETH, USDC)..." 
+            <div class="flex gap-2 w-full lg:w-auto flex-wrap items-center">
+                <input id="tokenAddress" type="text" value="" placeholder="Ticker or token/pool address (e.g. BONK)..."
                        class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded text-xs flex-1 lg:flex-none lg:w-64 font-mono text-amber-400">
                 <button onclick="executeEngine()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-1.5 rounded text-xs transition cursor-pointer">FORCE RUN</button>
+                <button id="liveBtn" onclick="toggleLive()" class="bg-slate-800 border border-slate-700 text-slate-300 px-3 py-1.5 rounded text-xs cursor-pointer">⏸ PAUSE LIVE</button>
             </div>
         </header>
 
-        <!-- Main Workspace -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            <!-- Left Data Grid Block -->
+
             <section class="bg-slate-900 border border-slate-800 rounded-lg p-4 space-y-4">
                 <div>
                     <h2 class="text-xs font-black uppercase text-slate-400 tracking-wider mb-2">📊 Live Engine Telemetry</h2>
-                    <div id="engineStatus" class="text-center font-black p-2 rounded text-xs bg-slate-950 border border-slate-800">INITIALIZING EXECUTION VECTOR...</div>
+                    <div id="engineStatus" class="text-center font-black p-2 rounded text-xs bg-slate-950 border border-slate-800">AWAITING TICKER...</div>
+                    <div id="feedMeta" class="text-[10px] text-slate-500 mt-1 text-center">-</div>
                 </div>
 
                 <div class="bg-slate-950 border border-slate-800 p-3 rounded space-y-1.5 text-xs">
-                    <span class="text-slate-400 block font-bold border-b border-slate-800 pb-1 text-[11px] text-amber-400 uppercase">Asset Specifications</span>
+                    <span class="block font-bold border-b border-slate-800 pb-1 text-[11px] text-amber-400 uppercase">Asset Specifications</span>
                     <div class="flex justify-between"><span>Label:</span><span id="statName" class="font-bold">-</span></div>
                     <div class="flex justify-between"><span>Current Price:</span><span id="statPrice" class="font-bold text-sky-400">-</span></div>
                     <div class="flex justify-between"><span>Liquidity Depth:</span><span id="statLiq" class="font-bold">-</span></div>
                     <div class="flex justify-between"><span>24h TX Volume:</span><span id="statVol" class="font-bold">-</span></div>
-                    <div class="flex justify-between"><span>Chain:</span><span id="statChain" class="font-bold text-purple-400">-</span></div>
+                    <div class="flex justify-between"><span>Txns 5m (B/S):</span><span id="statTx5" class="font-bold">-</span></div>
+                    <div class="flex justify-between"><span>Txns 1h (B/S):</span><span id="statTx1h" class="font-bold">-</span></div>
+                    <div class="flex justify-between"><span>Chain / DEX:</span><span id="statChain" class="font-bold text-purple-400">-</span></div>
                 </div>
 
                 <div class="space-y-2">
-                    <span class="text-slate-400 block font-bold text-[11px] text-amber-400 uppercase">📐 Micro Mathematical Core (Current Bar)</span>
+                    <span class="block font-bold text-[11px] text-amber-400 uppercase">📐 Micro Mathematical Core (Latest 1m Bar)</span>
                     <div class="grid grid-cols-2 gap-2 text-center text-xs">
                         <div class="bg-slate-950 p-2 rounded border border-slate-800">
                             <span class="text-[10px] text-slate-400 block">Attention Vector (τ_k)</span>
@@ -72,10 +69,11 @@
                             <span id="calcEntropy" class="font-bold text-rose-400">-</span>
                         </div>
                     </div>
+                    <p class="text-[10px] text-slate-500">τ_k = candle volume ÷ trailing 30-bar average. η·S = red-volume ÷ green-volume over the last 10 bars (η = 1).</p>
                 </div>
 
                 <div class="space-y-2">
-                    <span class="text-slate-400 block font-bold text-[11px] text-purple-400 uppercase">🔮 Predictive Outlook (Next Bar)</span>
+                    <span class="block font-bold text-[11px] text-purple-400 uppercase">🔮 Predictive Outlook (Next Bar)</span>
                     <div class="bg-slate-950 p-2 rounded border border-purple-800">
                         <span class="text-[10px] text-slate-400 block">Forecasted State</span>
                         <span id="predictedState" class="font-bold text-purple-300">CALCULATING...</span>
@@ -84,12 +82,17 @@
                 </div>
             </section>
 
-            <!-- Right Visual Mappings Block -->
             <section class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-lg p-4 flex flex-col justify-between">
                 <div class="flex justify-between items-center mb-2 flex-wrap gap-2">
-                    <h2 class="text-xs font-black uppercase text-slate-400 tracking-wider">📈 Verified Chart Vector (Last 24 Hours)</h2>
-                    <div class="flex gap-2 items-center text-[10px]">
-                        <button id="toggleForecast" onclick="toggleForecastMode()" class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-[10px] transition cursor-pointer">+ 4H FORECAST</button>
+                    <h2 class="text-xs font-black uppercase text-slate-400 tracking-wider">📈 Live 1-Minute Chart Vector</h2>
+                    <div class="flex gap-2 items-center text-[10px] flex-wrap">
+                        <select id="windowSel" onchange="rerender()" class="bg-slate-950 border border-slate-700 text-slate-300 rounded px-1 py-1 text-[10px]">
+                            <option value="60">1H</option>
+                            <option value="180" selected>3H</option>
+                            <option value="360">6H</option>
+                            <option value="1440">24H</option>
+                        </select>
+                        <button id="toggleForecast" onclick="toggleForecastMode()" class="bg-purple-600 hover:bg-purple-700 text-white px-2 py-1 rounded text-[10px] transition cursor-pointer">+ 30M EXTRAPOLATION</button>
                         <div class="flex gap-3">
                             <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#34d399]"></span> ALPHA RAMP</span>
                             <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#f43f5e]"></span> TERMINAL DECAY</span>
@@ -97,24 +100,22 @@
                         </div>
                     </div>
                 </div>
-                
                 <div class="h-64 w-full relative">
                     <canvas id="canvasEngine"></canvas>
                 </div>
             </section>
         </div>
 
-        <!-- Raw Calculated Mathematical Node Outputs (The Solution Matrix Table) -->
         <section class="bg-slate-900 border border-slate-800 rounded-lg p-4">
-            <h2 class="text-xs font-black uppercase text-slate-400 tracking-wider mb-3">🧮 STEP-BY-STEP CALCULATION LOG MATRIX</h2>
+            <h2 class="text-xs font-black uppercase text-slate-400 tracking-wider mb-3">🧮 STEP-BY-STEP CALCULATION LOG MATRIX (latest 30 bars, newest first)</h2>
             <div class="overflow-x-auto text-[11px]">
                 <table class="w-full text-left border-collapse">
                     <thead>
                         <tr class="border-b border-slate-800 text-slate-400 uppercase bg-slate-950/40">
-                            <th class="p-2">Time Node</th>
-                            <th class="p-2">Historical Price (USD)</th>
-                            <th class="p-2">Buys</th>
-                            <th class="p-2">Sells</th>
+                            <th class="p-2">Time</th>
+                            <th class="p-2">Close (USD)</th>
+                            <th class="p-2">Volume (USD)</th>
+                            <th class="p-2">Green Vol % (10m)</th>
                             <th class="p-2">Attention Force (τ_k)</th>
                             <th class="p-2">Entropy Vector (η·S)</th>
                             <th class="p-2">TCT Evaluation Resolution</th>
@@ -129,414 +130,357 @@
     </div>
 
     <script>
-        function acceptDisclaimer() {
-            const modal = document.getElementById('disclaimerModal');
-            modal.style.display = 'none';
-        }
+        /* ================= CONFIG ================= */
+        const DEX = "https://api.dexscreener.com";
+        const GT = "https://api.geckoterminal.com/api/v2";
+        const GT_HEADERS = { Accept: "application/json;version=20230302" };
+        // DexScreener chainId -> GeckoTerminal network id
+        const NET = { solana:"solana", ethereum:"eth", bsc:"bsc", base:"base", arbitrum:"arbitrum", polygon:"polygon_pos",
+                      avalanche:"avax", optimism:"optimism", pulsechain:"pulsechain", sui:"sui-network", ton:"ton",
+                      cronos:"cro", fantom:"ftm", linea:"linea", blast:"blast", zksync:"zksync", abstract:"abstract",
+                      berachain:"berachain", sonic:"sonic", hyperevm:"hyperevm" };
+        const ETA = 1.0;                 // entropy coefficient
+        const DEX_POLL_MS = 10000;       // DexScreener refresh
+        const CANDLE_POLL_MS = 20000;    // GeckoTerminal refresh (free tier ~30 req/min)
+        const FORECAST_MINUTES = 30;
 
-        let engineChart = null;
-        let forecastMode = false;
+        const COLORS = { alpha:'#34d399', decay:'#f43f5e', stable:'#38bdf8' };
+        const STATE_LABEL = {
+            alpha:  ["📈 ALPHA RAMP ENGAGED", "text-emerald-400 bg-emerald-950/30 border border-emerald-900/40"],
+            decay:  ["📉 TERMINAL DECAY DETECTED", "text-rose-400 bg-rose-950/30 border border-rose-900/40"],
+            stable: ["⚖️ STABLE BALANCE", "text-sky-400 bg-sky-950/30 border border-sky-900/40"]
+        };
+
+        /* ================= STATE ================= */
+        let engineChart = null, forecastMode = false;
+        let current = null;              // { chain, net, pairAddress, pair }
+        let candles = [];                // ascending [{t,o,h,l,c,v}] (t in seconds)
+        let series = [];                 // computed per-candle TCT values
         let lastMetrics = {};
-        let historicalMetrics = [];
+        let liveOn = true, dexTimer = null, candleTimer = null, backoffUntil = 0, runId = 0;
 
-        async function resolveTickerToAddress(ticker) {
-            const cleanTicker = ticker.replace(/^\$/, '').toUpperCase().trim();
-            
-            if (!cleanTicker) {
-                throw new Error("Ticker cannot be empty");
-            }
+        const $ = id => document.getElementById(id);
+        function acceptDisclaimer() { $('disclaimerModal').style.display = 'none'; }
+        const money = n => n == null || isNaN(n) ? "-" : "$" + Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 });
+        const px = p => { p = Number(p); if (!p) return "-"; return "$" + p.toLocaleString(undefined, { maximumFractionDigits: p >= 1 ? 4 : 10 }); };
+        const hhmm = sec => { const d = new Date(sec * 1000); return d.getHours().toString().padStart(2,'0') + ":" + d.getMinutes().toString().padStart(2,'0'); };
+        const setStatus = (txt, cls) => { const s = $('engineStatus'); s.innerText = txt; s.className = "text-center font-black p-2 rounded text-xs " + cls; };
+        const STATUS_AMBER = "bg-amber-950/30 text-amber-400 border border-amber-900/50";
+        const STATUS_GREEN = "bg-emerald-950/30 text-emerald-400 border border-emerald-900/50";
+        const STATUS_RED = "bg-rose-950/40 text-rose-500 border border-rose-900/50";
 
-            const searchRes = await fetch(`https://api.dexscreener.com/latest/dex/search/?q=${cleanTicker}`);
-            
-            if (!searchRes.ok) {
-                throw new Error(`Search API error: ${searchRes.status}`);
-            }
+        /* ================= API ================= */
+        let dexOk = true;   // false → DexScreener unreachable, use GeckoTerminal pool stats instead
+        const CHAIN_OF = Object.fromEntries(Object.entries(NET).map(([k, v]) => [v, k]));
 
-            const searchData = await searchRes.json();
-            
-            if (!searchData.pairs || searchData.pairs.length === 0) {
-                throw new Error(`No tokens found for ticker: ${cleanTicker}`);
-            }
-
-            // Look for exact symbol match first (any chain)
-            let bestMatch = searchData.pairs.find(p => 
-                p.baseToken.symbol.toUpperCase() === cleanTicker
-            );
-
-            // Fallback to first result (any chain)
-            if (!bestMatch) {
-                bestMatch = searchData.pairs[0];
-            }
-
-            if (!bestMatch) {
-                throw new Error(`Token not found for: ${cleanTicker}`);
-            }
-
-            return bestMatch;
+        // Convert a GeckoTerminal pool object into the DexScreener pair shape the rest of the page uses
+        function gtPoolToPair(pool, included = []) {
+            const a = pool.attributes || {}, rel = pool.relationships || {};
+            const net = rel.network?.data?.id || String(pool.id || '').split('_')[0];
+            const tok = id => included.find(i => i.id === id)?.attributes || {};
+            const bt = tok(rel.base_token?.data?.id), qt = tok(rel.quote_token?.data?.id);
+            const [bs, qs] = String(a.name || '').split(' / ');
+            const tx = k => a.transactions?.[k] ? { buys: a.transactions[k].buys, sells: a.transactions[k].sells } : undefined;
+            return {
+                chainId: CHAIN_OF[net] || net,
+                dexId: rel.dex?.data?.id || '',
+                pairAddress: a.address,
+                baseToken: { name: bt.name || bs, symbol: bt.symbol || bs, address: bt.address },
+                quoteToken: { symbol: qt.symbol || String(qs || '').replace(/\s[\d.]+%$/, '') },
+                priceUsd: a.base_token_price_usd,
+                liquidity: { usd: Number(a.reserve_in_usd) },
+                volume: { h24: Number(a.volume_usd?.h24) },
+                txns: { m5: tx('m5'), h1: tx('h1'), h24: tx('h24') },
+                priceChange: { h24: Number(a.price_change_percentage?.h24) }
+            };
         }
-
-        async function fetchRealHistoricalData(tokenAddress) {
+        async function getJson(url, headers) {
+            const host = new URL(url).host;
+            let r;
             try {
-                const dexRes = await fetch(`https://api.dexscreener.com/latest/dex/tokens/${tokenAddress}`);
-                if (dexRes.ok) {
-                    const dexData = await dexRes.json();
-                    if (dexData.pairs && dexData.pairs[0] && dexData.pairs[0].priceHistory) {
-                        return dexData.pairs[0].priceHistory.map(p => ({
-                            timestamp: p.timestamp || Date.now(),
-                            close: parseFloat(p.close || p.price || 0)
-                        }));
-                    }
-                }
-            } catch (e) {
-                console.warn("Historical data fetch failed:", e);
+                r = await fetch(url, headers ? { headers } : undefined);
+            } catch (e1) {
+                // retry once without custom headers (avoids CORS preflight problems)
+                try { r = await fetch(url); }
+                catch (e2) { throw new Error(`Browser could not reach ${host} (network, CORS, or ad-blocker/VPN blocking it)`); }
             }
-
-            return null;
+            if (r.status === 429) { backoffUntil = Date.now() + 60000; throw new Error("Rate limited (429) – backing off 60s"); }
+            if (!r.ok) throw new Error(`HTTP ${r.status} from ${new URL(url).host}`);
+            return r.json();
         }
 
-        function toggleForecastMode() {
-            forecastMode = !forecastMode;
-            const btn = document.getElementById('toggleForecast');
-            if (forecastMode) {
-                btn.classList.add('bg-purple-700', 'ring-2', 'ring-purple-500');
-                btn.textContent = '✓ 4H FORECAST ACTIVE';
-            } else {
-                btn.classList.remove('bg-purple-700', 'ring-2', 'ring-purple-500');
-                btn.textContent = '+ 4H FORECAST';
+        async function resolveTicker(input) {
+            const q = input.replace(/^\$/, '').trim();
+            if (!q) throw new Error("Enter a ticker or address");
+            let pairs;
+            try {
+                const data = await getJson(`${DEX}/latest/dex/search/?q=${encodeURIComponent(q)}`);
+                pairs = (data.pairs || []).filter(p => NET[p.chainId]);
+                dexOk = true;
+            } catch (e) {
+                console.warn("DexScreener unavailable, falling back to GeckoTerminal search:", e.message);
+                dexOk = false;
+                const j = await getJson(`${GT}/search/pools?query=${encodeURIComponent(q)}&include=base_token,quote_token,dex&page=1`, GT_HEADERS);
+                pairs = (j.data || []).map(p => gtPoolToPair(p, j.included || [])).filter(p => NET[p.chainId]);
             }
-            if (lastMetrics.labels && lastMetrics.prices && lastMetrics.colors) {
-                renderChartVector(lastMetrics.labels, lastMetrics.prices, lastMetrics.colors);
-            }
+            if (!pairs.length) throw new Error(`No supported pairs found for "${q}"`);
+            const up = q.toUpperCase();
+            const exact = pairs.filter(p => p.baseToken.symbol.toUpperCase() === up);
+            const pool = exact.length ? exact : pairs;
+            // highest-liquidity match is the least likely to be a clone/scam pair
+            pool.sort((a, b) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0));
+            return pool[0];
+        }
+
+        async function fetchCandlePage(net, pool, beforeSec) {
+            let url = `${GT}/networks/${net}/pools/${pool}/ohlcv/minute?aggregate=1&limit=1000&currency=usd`;
+            if (beforeSec) url += `&before_timestamp=${beforeSec}`;
+            const j = await getJson(url, GT_HEADERS);
+            return (j?.data?.attributes?.ohlcv_list || []).map(([t,o,h,l,c,v]) => ({ t, o, h, l, c, v }));
+        }
+
+        function mergeCandles(newer) {
+            const m = new Map(candles.map(c => [c.t, c]));
+            newer.forEach(c => m.set(c.t, c));
+            candles = [...m.values()].sort((a, b) => a.t - b.t).slice(-1440);
+        }
+
+        /* ================= TCT MATH (per 1m bar) ================= */
+        function computeSeries() {
+            series = candles.map((c, i) => {
+                const w = candles.slice(Math.max(0, i - 9), i + 1);
+                let green = 0, red = 0;
+                w.forEach(x => { if (x.c >= x.o) green += x.v; else red += x.v; });
+                const ratio = green > 0 ? Math.min(3, red / green) : (red > 0 ? 3 : 1);
+                const entropy = ETA * ratio;
+                const prev = candles.slice(Math.max(0, i - 30), i);
+                const avg = prev.length ? prev.reduce((s, x) => s + x.v, 0) / prev.length : 0;
+                const tau = avg > 0 ? c.v / avg : (c.v > 0 ? 1 : 0);
+                const greenPct = green + red > 0 ? green / (green + red) : 0.5;
+                let state = "stable";
+                if (entropy >= 1.0) state = "decay";
+                else if (green >= 1.5 * red && entropy < 0.6 && green > 0) state = "alpha";
+                return { t: c.t, close: c.c, vol: c.v, tau, entropy, greenPct, state };
+            });
         }
 
         function predictNextState(tau_k, entropy, buyRatio) {
-            const entropyWeight = entropy / 0.5;
-            const tauWeight = tau_k / 5;
-            const buyWeight = buyRatio;
-            
-            const alphaScore = (tauWeight * 0.4 + (1 - entropyWeight) * 0.4 + buyWeight * 0.2);
-            const decayScore = (entropyWeight * 0.5 + (1 - tauWeight) * 0.3 + (1 - buyWeight) * 0.2);
-            
-            let predictedState, confidence, stateClass;
-            
-            if (alphaScore > decayScore + 0.1) {
-                predictedState = "📈 ALPHA RAMP INCOMING";
-                confidence = Math.min(alphaScore * 100, 99).toFixed(1);
-                stateClass = "text-emerald-400 bg-emerald-950/30 border border-emerald-900/40";
-            } else if (decayScore > alphaScore + 0.1) {
-                predictedState = "📉 TERMINAL DECAY WARNING";
-                confidence = Math.min(decayScore * 100, 99).toFixed(1);
-                stateClass = "text-rose-400 bg-rose-950/30 border border-rose-900/40";
-            } else {
-                predictedState = "⚖️ STABLE BALANCE EXPECTED";
-                confidence = Math.min(Math.max(alphaScore, decayScore) * 100 * 0.8, 99).toFixed(1);
-                stateClass = "text-sky-400 bg-sky-950/30 border border-sky-900/40";
-            }
-            
-            return { predictedState, confidence, stateClass };
+            const clamp = x => Math.max(0, Math.min(1, x));
+            const entropyWeight = clamp(entropy / 0.5);
+            const tauWeight = clamp(tau_k / 5);
+            const alphaScore = tauWeight * 0.4 + (1 - entropyWeight) * 0.4 + buyRatio * 0.2;
+            const decayScore = entropyWeight * 0.5 + (1 - tauWeight) * 0.3 + (1 - buyRatio) * 0.2;
+            if (alphaScore > decayScore + 0.1) return { predictedState: "📈 ALPHA RAMP INCOMING", confidence: Math.min(alphaScore * 100, 99).toFixed(1), cls: "text-emerald-400" };
+            if (decayScore > alphaScore + 0.1) return { predictedState: "📉 TERMINAL DECAY WARNING", confidence: Math.min(decayScore * 100, 99).toFixed(1), cls: "text-rose-400" };
+            return { predictedState: "⚖️ STABLE BALANCE EXPECTED", confidence: Math.min(Math.max(alphaScore, decayScore) * 80, 99).toFixed(1), cls: "text-sky-400" };
         }
 
-        function forecastPrices(historicalPrices, tau_k, entropy, hours = 4) {
-            const n = historicalPrices.length;
-            if (n < 2) return historicalPrices;
-            
-            const forecast = [...historicalPrices];
-            const lastPrice = historicalPrices[n - 1];
-            
-            const recentPrices = historicalPrices.slice(-6);
-            const trend = (recentPrices[5] - recentPrices[0]) / recentPrices[0];
-            
-            const momentum = (trend * tau_k) / 10;
-            const volatility = entropy * 0.1;
-            
-            for (let i = 0; i < hours; i++) {
-                const randomVariance = (Math.random() - 0.5) * volatility * lastPrice;
-                const predictedPrice = forecast[forecast.length - 1] * (1 + momentum / hours) + randomVariance;
-                forecast.push(Math.max(predictedPrice, 0));
+        // Deterministic momentum extrapolation (no random noise). Illustrative only.
+        function extrapolate(prices, minutes) {
+            const n = prices.length;
+            if (n < 12) return { pts: [], band: [] };
+            const rets = [];
+            for (let i = n - 10; i < n; i++) rets.push(Math.log(prices[i] / prices[i - 1]));
+            const drift = rets.reduce((a, b) => a + b, 0) / rets.length * 0.5;       // damped drift
+            const mu = rets.reduce((a, b) => a + b, 0) / rets.length;
+            const sigma = Math.sqrt(rets.reduce((a, b) => a + (b - mu) ** 2, 0) / rets.length);
+            const pts = [], band = [];
+            for (let k = 1; k <= minutes; k++) {
+                const p = prices[n - 1] * Math.exp(drift * k);
+                pts.push(p); band.push(p * sigma * Math.sqrt(k));
             }
-            
-            return forecast;
+            return { pts, band };
         }
 
-        function generateForecastLabels(historicalLabels) {
-            const lastLabel = historicalLabels[historicalLabels.length - 1];
-            const lastHour = parseInt(lastLabel.split(':')[0]);
-            const forecastLabels = [...historicalLabels];
-            
-            for (let i = 1; i <= 4; i++) {
-                const nextHour = (lastHour + i) % 24;
-                forecastLabels.push(`${nextHour.toString().padStart(2, '0')}:00`);
-            }
-            
-            return forecastLabels;
+        /* ================= RENDER ================= */
+        function renderDex() {
+            const p = current?.pair; if (!p) return;
+            $('statName').innerText = `${p.baseToken.name} (${p.baseToken.symbol})`;
+            const last = candles.length ? candles[candles.length - 1].c : Number(p.priceUsd);
+            $('statPrice').innerText = px(Number(p.priceUsd) || last);
+            $('statLiq').innerText = money(p.liquidity?.usd);
+            $('statVol').innerText = money(p.volume?.h24);
+            const t5 = p.txns?.m5, t1 = p.txns?.h1;
+            $('statTx5').innerText = t5 ? `${t5.buys} / ${t5.sells}` : "-";
+            $('statTx1h').innerText = t1 ? `${t1.buys} / ${t1.sells}` : "-";
+            $('statChain').innerText = `${p.chainId.toUpperCase()} / ${p.dexId}`;
         }
 
-        async function executeEngine() {
-            const tickerInput = document.getElementById('tokenAddress').value.trim();
-            if(!tickerInput) return alert("Fatal: Enter a ticker symbol (e.g. PUMP, ETH, USDC, BONK)");
+        function rerender() {
+            if (!series.length) return;
+            const win = parseInt($('windowSel').value, 10);
+            const view = series.slice(-win);
+            const labels = view.map(s => hhmm(s.t));
+            const prices = view.map(s => s.close);
+            const colors = view.map(s => COLORS[s.state]);
+            const latest = series[series.length - 1];
 
-            const status = document.getElementById('engineStatus');
-            status.innerText = "RESOLVING TICKER ACROSS ALL CHAINS...";
-            status.className = "text-center font-black p-2 rounded text-xs bg-amber-950/30 text-amber-400 border border-amber-900/50";
+            $('calcTau').innerText = latest.tau.toFixed(3);
+            $('calcEntropy').innerText = latest.entropy.toFixed(3);
 
-            try {
-                const tokenPair = await resolveTickerToAddress(tickerInput);
-                
-                status.innerText = "FETCHING REAL-TIME DATA...";
-                
-                document.getElementById('statName').innerText = `${tokenPair.baseToken.name} (${tokenPair.baseToken.symbol})`;
-                document.getElementById('statPrice').innerText = `$${parseFloat(tokenPair.priceUsd || 0).toLocaleString(undefined, {maximumFractionDigits:8})}`;
-                document.getElementById('statLiq').innerText = `$${parseFloat(tokenPair.liquidity?.usd || 0).toLocaleString()}`;
-                document.getElementById('statVol').innerText = `$${parseFloat(tokenPair.volume?.h24 || 0).toLocaleString()}`;
-                document.getElementById('statChain').innerText = tokenPair.chainId.toUpperCase();
+            const tx = current?.pair?.txns?.h1 || current?.pair?.txns?.h24;
+            const buyRatio = tx && (tx.buys + tx.sells) > 0 ? tx.buys / (tx.buys + tx.sells) : latest.greenPct;
+            const pred = predictNextState(latest.tau, latest.entropy, buyRatio);
+            const ps = $('predictedState');
+            ps.innerText = pred.predictedState;
+            ps.className = `font-bold ${pred.cls}`;
+            $('forecastConfidence').innerText = `Confidence: ${pred.confidence}% (heuristic score, not a calibrated probability)`;
 
-                let chartData = await fetchRealHistoricalData(tokenPair.baseToken.address);
+            lastMetrics = { labels, prices, colors };
 
-                if (!chartData || chartData.length === 0) {
-                    status.innerText = "⚠️ USING LIVE PRICE WITH COMPUTED HISTORY";
-                    const basePrice = parseFloat(tokenPair.priceUsd || 0.001);
-                    const now = Date.now();
-                    chartData = [];
-                    
-                    let runningPrice = basePrice;
-                    for (let i = 0; i < 24; i++) {
-                        const hourlyChange = (Math.random() - 0.5) * 0.05;
-                        runningPrice = runningPrice * (1 + hourlyChange);
-                        chartData.push({
-                            timestamp: now - (24 - i) * 3600000,
-                            close: Math.max(runningPrice, basePrice * 0.5)
-                        });
-                    }
-                }
-
-                processTctCalculations(chartData);
-                status.innerText = "✅ EXECUTION VECTOR COMPLETE - REAL DATA";
-                status.className = "text-center font-black p-2 rounded text-xs bg-emerald-950/30 text-emerald-400 border border-emerald-900/50";
-
-            } catch (err) {
-                console.error(err);
-                status.innerText = `ERROR: ${err.message}`;
-                status.className = "text-center font-black p-2 rounded text-xs bg-rose-950/40 text-rose-500 border border-rose-900/50";
-            }
-        }
-
-        function processTctCalculations(bars) {
-            const timeLabels = [];
-            const priceData = [];
-            const colorVector = [];
-            const scaleVector = [];
-            
-            const logBody = document.getElementById('matrixLogBody');
-            logBody.innerHTML = "";
-
-            let continuousState = "✅ STANDARD SYSTEM SYMMETRY";
-            let stateClass = "text-emerald-400 bg-emerald-950/30 border border-emerald-900/40";
-
-            const processedBars = bars.slice(0, 24).map((bar, idx) => {
-                const price = typeof bar === 'number' ? bar : (bar.close || Math.random() * 100);
-                const time = new Date(bar.timestamp || Date.now() - (24 - idx) * 3600000);
-                return { timestamp: time.getTime(), close: price };
-            });
-
-            let baselinePrice = processedBars.length > 0 ? processedBars[0].close : 0;
-
-            processedBars.forEach((bar, index) => {
-                const nodeDate = new Date(bar.timestamp);
-                const timeString = `${nodeDate.getHours().toString().padStart(2,'0')}:00`;
-                timeLabels.push(timeString);
-
-                const currentPrice = parseFloat(bar.close);
-                priceData.push(currentPrice);
-
-                const priceChange = index > 0 ? ((currentPrice - processedBars[index - 1].close) / processedBars[index - 1].close) * 100 : 0;
-                const attentionVector = Math.abs(priceChange) * (1 + (Math.random() * 0.3));
-
-                const volatility = Math.abs(priceChange) * 0.5 + (Math.random() * 0.2);
-                const entropy = volatility.toFixed(4);
-
-                if (priceChange > 2) {
-                    continuousState = "📈 ALPHA RAMP ENGAGED";
-                    stateClass = "text-emerald-400 bg-emerald-950/30 border border-emerald-900/40";
-                    colorVector.push('#34d399');
-                } else if (priceChange < -2) {
-                    continuousState = "📉 TERMINAL DECAY DETECTED";
-                    stateClass = "text-rose-400 bg-rose-950/30 border border-rose-900/40";
-                    colorVector.push('#f43f5e');
-                } else {
-                    continuousState = "⚖️ STABLE BALANCE";
-                    stateClass = "text-sky-400 bg-sky-950/30 border border-sky-900/40";
-                    colorVector.push('#38bdf8');
-                }
-
-                scaleVector.push(currentPrice);
-
-                if (index === processedBars.length - 1) {
-                    document.getElementById('calcTau').innerText = attentionVector.toFixed(4);
-                    document.getElementById('calcEntropy').innerText = entropy;
-                    
-                    const totalOrders = 2000;
-                    const buyCount = 1200 + Math.random() * 400;
-                    const buyRatio = buyCount / totalOrders;
-                    
-                    lastMetrics = {
-                        tau_k: attentionVector,
-                        entropy: parseFloat(entropy),
-                        buyRatio: buyRatio,
-                        colors: colorVector,
-                        prices: priceData,
-                        labels: timeLabels
-                    };
-                    
-                    const prediction = predictNextState(attentionVector, parseFloat(entropy), buyRatio);
-                    document.getElementById('predictedState').innerText = prediction.predictedState;
-                    document.getElementById('forecastConfidence').innerText = `Confidence: ${prediction.confidence}%`;
-                    document.getElementById('predictedState').className = `font-bold text-purple-300 ${prediction.stateClass.split(' ').slice(0, 3).join(' ')}`;
-                }
-
+            // log table: latest 30 bars, newest first
+            const body = $('matrixLogBody');
+            body.innerHTML = "";
+            series.slice(-30).reverse().forEach(s => {
+                const [label, cls] = STATE_LABEL[s.state];
                 const row = document.createElement('tr');
                 row.className = "border-b border-slate-800 hover:bg-slate-800/40";
                 row.innerHTML = `
-                    <td class="p-2 text-slate-400">${timeString}</td>
-                    <td class="p-2 font-bold text-sky-400">$${currentPrice.toFixed(8)}</td>
-                    <td class="p-2">${(Math.random() * 1000).toFixed(0)}</td>
-                    <td class="p-2">${(Math.random() * 1000).toFixed(0)}</td>
-                    <td class="p-2 text-emerald-400">${attentionVector.toFixed(4)}</td>
-                    <td class="p-2 text-rose-400">${entropy}</td>
-                    <td class="p-2"><span class="px-2 py-1 rounded text-xs ${stateClass}">${continuousState}</span></td>
-                `;
-                logBody.appendChild(row);
+                    <td class="p-2 text-slate-400">${hhmm(s.t)}</td>
+                    <td class="p-2 font-bold text-sky-400">${px(s.close)}</td>
+                    <td class="p-2">${money(s.vol)}</td>
+                    <td class="p-2">${(s.greenPct * 100).toFixed(0)}%</td>
+                    <td class="p-2 text-emerald-400">${s.tau.toFixed(3)}</td>
+                    <td class="p-2 text-rose-400">${s.entropy.toFixed(3)}</td>
+                    <td class="p-2"><span class="px-2 py-1 rounded text-xs ${cls}">${label}</span></td>`;
+                body.appendChild(row);
             });
 
-            renderChartVector(timeLabels, priceData, colorVector);
+            renderChart(labels, prices, colors);
         }
 
-        function renderChartVector(labels, data, colors) {
-            const ctx = document.getElementById('canvasEngine').getContext('2d');
-            
-            if (engineChart) {
-                engineChart.destroy();
-            }
-
+        function renderChart(labels, data, colors) {
+            const ctx = $('canvasEngine').getContext('2d');
+            if (engineChart) engineChart.destroy();
+            const dense = data.length > 200;
             const datasets = [{
-                label: 'Price Vector',
-                data: data,
-                borderColor: '#f59e0b',
-                backgroundColor: 'rgba(245, 158, 11, 0.05)',
-                tension: 0.4,
-                fill: true,
-                pointBackgroundColor: colors,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                borderWidth: 2,
-                pointBorderColor: '#1f2937'
+                label: 'Price (1m close)', data, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.05)',
+                tension: 0.2, fill: true, pointBackgroundColor: colors, pointBorderColor: 'transparent',
+                pointRadius: dense ? 0 : 2.5, pointHoverRadius: 5, borderWidth: 2
             }];
-
             let chartLabels = [...labels];
 
-            if (forecastMode && lastMetrics.tau_k !== undefined) {
-                const forecastData = forecastPrices(data, lastMetrics.tau_k, lastMetrics.entropy, 4);
-                const forecastPrices4h = forecastData.slice(data.length);
-                const forecastLabels = generateForecastLabels(labels);
-                
-                chartLabels = [...labels, null, ...forecastLabels.slice(labels.length)];
-
-                const extendedData = [...data];
-                extendedData.push(null);
-                extendedData.push(...forecastPrices4h);
-
-                datasets.push({
-                    label: '4H Forecast',
-                    data: extendedData,
-                    borderColor: '#a855f7',
-                    backgroundColor: 'rgba(168, 85, 247, 0.1)',
-                    tension: 0.4,
-                    fill: false,
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    pointRadius: 3,
-                    pointHoverRadius: 5,
-                    pointBackgroundColor: '#a855f7',
-                    pointBorderColor: '#1f2937',
-                    segment: {
-                        borderColor: ctx => ctx.p0DataIndex === data.length - 1 ? 'transparent' : '#a855f7'
-                    }
-                });
-
-                const upperBand = extendedData.map((val, idx) => {
-                    if (idx < data.length || val === null) return null;
-                    return val * 1.05;
-                });
-                const lowerBand = extendedData.map((val, idx) => {
-                    if (idx < data.length || val === null) return null;
-                    return val * 0.95;
-                });
-
-                datasets.push({
-                    label: 'Confidence Band',
-                    data: upperBand,
-                    fill: '+1',
-                    borderColor: 'transparent',
-                    backgroundColor: 'rgba(168, 85, 247, 0.15)',
-                    borderWidth: 0,
-                    pointRadius: 0,
-                    tension: 0.4
-                });
-
-                datasets.push({
-                    label: 'Lower Band',
-                    data: lowerBand,
-                    borderColor: 'transparent',
-                    backgroundColor: 'transparent',
-                    borderWidth: 0,
-                    pointRadius: 0,
-                    tension: 0.4
-                });
+            if (forecastMode && data.length >= 12) {
+                const { pts, band } = extrapolate(data, FORECAST_MINUTES);
+                const lastT = series[series.length - 1].t;
+                const fLabels = pts.map((_, i) => hhmm(lastT + (i + 1) * 60));
+                chartLabels = [...labels, ...fLabels];
+                const pad = new Array(data.length - 1).fill(null);
+                const start = data[data.length - 1];
+                datasets.push({ label: 'Extrapolation', data: [...pad, start, ...pts], borderColor: '#a855f7', borderDash: [5,5],
+                    borderWidth: 2, pointRadius: 0, tension: 0.2, fill: false });
+                datasets.push({ label: 'Upper (1σ)', data: [...pad, start, ...pts.map((p, i) => p + band[i])], borderColor: 'transparent',
+                    backgroundColor: 'rgba(168,85,247,0.15)', pointRadius: 0, fill: '+1' });
+                datasets.push({ label: 'Lower (1σ)', data: [...pad, start, ...pts.map((p, i) => Math.max(0, p - band[i]))], borderColor: 'transparent',
+                    backgroundColor: 'transparent', pointRadius: 0, fill: false });
             }
 
             engineChart = new Chart(ctx, {
                 type: 'line',
-                data: {
-                    labels: chartLabels,
-                    datasets: datasets
-                },
+                data: { labels: chartLabels, datasets },
                 options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: forecastMode,
-                            labels: {
-                                color: '#94a3b8',
-                                font: { size: 10 }
-                            }
-                        }
-                    },
+                    responsive: true, maintainAspectRatio: false, animation: false,
+                    plugins: { legend: { display: forecastMode, labels: { color: '#94a3b8', font: { size: 10 } } } },
                     scales: {
-                        y: {
-                            ticks: {
-                                color: '#94a3b8',
-                                font: { size: 10 }
-                            },
-                            grid: {
-                                color: 'rgba(51, 65, 85, 0.3)'
-                            },
-                            beginAtZero: false
-                        },
-                        x: {
-                            ticks: {
-                                color: '#94a3b8',
-                                font: { size: 10 }
-                            },
-                            grid: {
-                                display: false
-                            }
-                        }
+                        y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { color: 'rgba(51,65,85,0.3)' }, beginAtZero: false },
+                        x: { ticks: { color: '#94a3b8', font: { size: 10 }, maxTicksLimit: 12 }, grid: { display: false } }
                     }
                 }
             });
-
-            engineChart.chartData = { colors };
         }
+
+        function toggleForecastMode() {
+            forecastMode = !forecastMode;
+            const btn = $('toggleForecast');
+            btn.classList.toggle('ring-2', forecastMode);
+            btn.classList.toggle('ring-purple-500', forecastMode);
+            btn.textContent = forecastMode ? '✓ 30M EXTRAPOLATION ON' : '+ 30M EXTRAPOLATION';
+            if (lastMetrics.labels) renderChart(lastMetrics.labels, lastMetrics.prices, lastMetrics.colors);
+        }
+
+        /* ================= RUN + LIVE LOOP ================= */
+        async function executeEngine() {
+            const input = $('tokenAddress').value.trim();
+            if (!input) return alert("Enter a ticker symbol or address (e.g. BONK)");
+            const myRun = ++runId;
+            stopLive();
+            setStatus("RESOLVING TICKER ACROSS CHAINS...", STATUS_AMBER);
+            try {
+                const pair = await resolveTicker(input);
+                if (myRun !== runId) return;
+                current = { chain: pair.chainId, net: NET[pair.chainId], pairAddress: pair.pairAddress, pair };
+                renderDex();
+
+                setStatus("LOADING 1-MINUTE CANDLES (GECKOTERMINAL)...", STATUS_AMBER);
+                const page1 = await fetchCandlePage(current.net, current.pairAddress);
+                candles = [];
+                mergeCandles(page1);
+                if (page1.length >= 1000) {           // second page → roughly 24h of history
+                    try { mergeCandles(await fetchCandlePage(current.net, current.pairAddress, Math.min(...page1.map(c => c.t)))); }
+                    catch (e) { console.warn("Second candle page failed:", e); }
+                }
+                if (myRun !== runId) return;
+                if (candles.length < 12) throw new Error("GeckoTerminal returned too few 1-minute candles for this pool (new or illiquid pair?)");
+
+                computeSeries();
+                rerender();
+                setStatus("✅ LIVE – REAL 1M CANDLES", STATUS_GREEN);
+                markUpdated();
+                startLive();
+            } catch (err) {
+                console.error(err);
+                setStatus(`ERROR: ${err.message}`, STATUS_RED);
+            }
+        }
+
+        function markUpdated() { $('feedMeta').innerText = `DexScreener ${DEX_POLL_MS/1000}s · GeckoTerminal ${CANDLE_POLL_MS/1000}s · updated ${new Date().toLocaleTimeString()} · ${candles.length} candles`; }
+
+        async function pollDex() {
+            if (!current || !liveOn || document.hidden || Date.now() < backoffUntil) return;
+            try {
+                let p;
+                if (dexOk) {
+                    try {
+                        const j = await getJson(`${DEX}/latest/dex/pairs/${current.chain}/${current.pairAddress}`);
+                        p = j.pairs?.[0] || j.pair;
+                    } catch (e) { dexOk = false; }
+                }
+                if (!dexOk) {
+                    const j = await getJson(`${GT}/networks/${current.net}/pools/${current.pairAddress}?include=base_token,quote_token,dex`, GT_HEADERS);
+                    p = gtPoolToPair(j.data, j.included || []);
+                }
+                if (p) { current.pair = p; renderDex(); markUpdated(); }
+            } catch (e) { $('feedMeta').innerText = "Live stats: " + e.message; }
+        }
+
+        async function pollCandles() {
+            if (!current || !liveOn || document.hidden || Date.now() < backoffUntil) return;
+            const id = runId;
+            try {
+                const recent = await fetchCandlePage(current.net, current.pairAddress);
+                if (id !== runId) return;
+                mergeCandles(recent.slice(-60));       // newest ~60 candles overwrite/extend history
+                computeSeries();
+                rerender();
+                markUpdated();
+            } catch (e) { $('feedMeta').innerText = "GeckoTerminal: " + e.message; }
+        }
+
+        function startLive() {
+            stopLive();
+            if (!liveOn) return;
+            dexTimer = setInterval(pollDex, DEX_POLL_MS);
+            candleTimer = setInterval(pollCandles, CANDLE_POLL_MS);
+        }
+        function stopLive() { clearInterval(dexTimer); clearInterval(candleTimer); dexTimer = candleTimer = null; }
+
+        function toggleLive() {
+            liveOn = !liveOn;
+            $('liveBtn').textContent = liveOn ? "⏸ PAUSE LIVE" : "▶ RESUME LIVE";
+            if (liveOn && current) { pollDex(); pollCandles(); startLive(); } else stopLive();
+        }
+
+        $('tokenAddress').addEventListener('keydown', e => { if (e.key === 'Enter') executeEngine(); });
     </script>
 </body>
 </html>
