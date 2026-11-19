@@ -30,8 +30,13 @@
                 <p class="text-xs text-slate-400">DexScreener (live price, volume, txns) + GeckoTerminal (1-minute OHLCV candles). No keys, no simulated history.</p>
             </div>
             <div class="flex gap-2 w-full lg:w-auto flex-wrap items-center">
-                <input id="tokenAddress" type="text" value="" placeholder="Ticker or token/pool address (e.g. BONK)..."
+                <input id="tokenAddress" type="text" value="" placeholder="BTC, ETH, XRP, FET, VET, BONK or 0x address..."
                        class="bg-slate-900 border border-slate-700 px-3 py-1.5 rounded text-xs flex-1 lg:flex-none lg:w-64 font-mono text-amber-400">
+                <select id="srcSel" class="bg-slate-900 border border-slate-700 text-slate-300 rounded px-1 py-1.5 text-xs" title="Where to look the ticker up">
+                    <option value="auto" selected>AUTO (exchange, then DEX)</option>
+                    <option value="cex">EXCHANGE ONLY (BTC, ETH, XRP...)</option>
+                    <option value="dex">DEX ONLY (memecoins)</option>
+                </select>
                 <button onclick="executeEngine()" class="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-4 py-1.5 rounded text-xs transition cursor-pointer">FORCE RUN</button>
                 <button id="liveBtn" onclick="toggleLive()" class="bg-slate-800 border border-slate-700 text-slate-300 px-3 py-1.5 rounded text-xs cursor-pointer">⏸ PAUSE LIVE</button>
             </div>
@@ -245,12 +250,79 @@
             candles = [...m.values()].sort((a, b) => a.t - b.t).slice(-1440);
         }
 
+        /* ================= EXCHANGE DATA (majors: BTC, ETH, XRP, FET, VET...) ================= */
+        const CB = "https://api.exchange.coinbase.com";          // keyless, US-friendly
+        const BN_HOSTS = [["binance", "https://api.binance.com"], ["binanceus", "https://api.binance.us"]];
+        const ALIAS = { VTE: "VET", RIPPLE: "XRP", BITCOIN: "BTC", ETHEREUM: "ETH" };
+
+        function parseBase(input) {
+            let b = input.toUpperCase().replace(/^\$/, '').replace(/[^A-Z0-9]/g, '');
+            b = b.replace(/(USDT|USDC|PERP|USD)$/, '') || b;
+            return ALIAS[b] || b;
+        }
+
+        // Normalise exchange stats into the pair shape the page already renders
+        function cexPair(src, base, price, openPx, vol24Usd, extra = {}) {
+            return { chainId: src, dexId: "spot", pairAddress: base, baseToken: { name: base, symbol: base },
+                     quoteToken: { symbol: "USD" }, priceUsd: price, liquidity: { usd: null }, volume: { h24: vol24Usd },
+                     txns: extra.txns || {}, priceChange: { h24: openPx ? (price / openPx - 1) * 100 : NaN } };
+        }
+
+        async function fetchCexStats(c) {
+            if (c.source === "coinbase") {
+                const st = await getJson(`${CB}/products/${c.id}/stats`);
+                const last = parseFloat(st.last), open = parseFloat(st.open);
+                return cexPair("coinbase", c.base, last, open, parseFloat(st.volume) * last);
+            }
+            const t = await getJson(`${c.host}/api/v3/ticker/24hr?symbol=${c.id}`);
+            return cexPair(c.source, c.base, parseFloat(t.lastPrice), parseFloat(t.openPrice), parseFloat(t.quoteVolume));
+        }
+
+        async function resolveExchange(input) {
+            const base = parseBase(input);
+            if (!base || /^0X/.test(base)) throw new Error("Not an exchange ticker");
+            try {
+                await getJson(`${CB}/products/${base}-USD`);
+                return { source: "coinbase", id: `${base}-USD`, base };
+            } catch (e) { /* not on Coinbase, try Binance */ }
+            for (const [source, host] of BN_HOSTS) {
+                try {
+                    await getJson(`${host}/api/v3/ticker/24hr?symbol=${base}USDT`);
+                    return { source, host, id: `${base}USDT`, base };
+                } catch (e) { /* try next */ }
+            }
+            throw new Error(`"${base}" not found on Coinbase or Binance`);
+        }
+
+        // one page of 1m candles (ascending), newest page if beforeSec omitted
+        async function fetchCexCandlePage(c, beforeSec) {
+            if (c.source === "coinbase") {
+                let url = `${CB}/products/${c.id}/candles?granularity=60`;
+                if (beforeSec) url += `&start=${new Date((beforeSec - 300 * 60) * 1000).toISOString()}&end=${new Date((beforeSec - 60) * 1000).toISOString()}`;
+                const rows = await getJson(url);
+                // [time, low, high, open, close, base volume]; convert volume to approx USD
+                return rows.map(r => ({ t: r[0], o: r[3], h: r[2], l: r[1], c: r[4], v: r[5] * r[4] })).sort((a, b) => a.t - b.t);
+            }
+            let url = `${c.host}/api/v3/klines?symbol=${c.id}&interval=1m&limit=1000`;
+            if (beforeSec) url += `&endTime=${beforeSec * 1000 - 1}`;
+            const rows = await getJson(url);
+            // [openTime, o, h, l, c, vol, closeTime, quoteVol, trades, takerBuyBase, takerBuyQuote]
+            return rows.map(r => ({ t: Math.floor(r[0] / 1000), o: +r[1], h: +r[2], l: +r[3], c: +r[4], v: +r[7], tb: +r[10] }));
+        }
+
+        const fetchAnyCandlePage = (beforeSec) => current.source === "dex"
+            ? fetchCandlePage(current.net, current.pairAddress, beforeSec)
+            : fetchCexCandlePage(current, beforeSec);
+
         /* ================= TCT MATH (per 1m bar) ================= */
         function computeSeries() {
             series = candles.map((c, i) => {
                 const w = candles.slice(Math.max(0, i - 9), i + 1);
                 let green = 0, red = 0;
-                w.forEach(x => { if (x.c >= x.o) green += x.v; else red += x.v; });
+                w.forEach(x => {
+                    if (x.tb !== undefined) { green += x.tb; red += Math.max(0, x.v - x.tb); }   // Binance: real taker buy vs sell volume
+                    else if (x.c >= x.o) green += x.v; else red += x.v;
+                });
                 const ratio = green > 0 ? Math.min(3, red / green) : (red > 0 ? 3 : 1);
                 const entropy = ETA * ratio;
                 const prev = candles.slice(Math.max(0, i - 30), i);
@@ -406,21 +478,39 @@
             stopLive();
             setStatus("RESOLVING TICKER ACROSS CHAINS...", STATUS_AMBER);
             try {
-                const pair = await resolveTicker(input);
-                if (myRun !== runId) return;
-                current = { chain: pair.chainId, net: NET[pair.chainId], pairAddress: pair.pairAddress, pair };
-                renderDex();
-
-                setStatus("LOADING 1-MINUTE CANDLES (GECKOTERMINAL)...", STATUS_AMBER);
-                const page1 = await fetchCandlePage(current.net, current.pairAddress);
-                candles = [];
-                mergeCandles(page1);
-                if (page1.length >= 1000) {           // second page → roughly 24h of history
-                    try { mergeCandles(await fetchCandlePage(current.net, current.pairAddress, Math.min(...page1.map(c => c.t)))); }
-                    catch (e) { console.warn("Second candle page failed:", e); }
+                const mode = $('srcSel').value;
+                const looksLikeAddress = /^(0x)?[0-9a-fA-F]{30,}$|^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(input);
+                let found = null;
+                if (mode !== "dex" && !looksLikeAddress) {
+                    try { found = await resolveExchange(input); }
+                    catch (e) { if (mode === "cex") throw e; }
                 }
                 if (myRun !== runId) return;
-                if (candles.length < 12) throw new Error("GeckoTerminal returned too few 1-minute candles for this pool (new or illiquid pair?)");
+                if (found) {
+                    current = { ...found, chain: found.source, net: null, pairAddress: found.id, pair: await fetchCexStats(found) };
+                } else {
+                    const pair = await resolveTicker(input);
+                    if (myRun !== runId) return;
+                    current = { source: "dex", chain: pair.chainId, net: NET[pair.chainId], pairAddress: pair.pairAddress, pair };
+                }
+                renderDex();
+
+                const feedName = current.source === "dex" ? "GECKOTERMINAL" : current.source.toUpperCase();
+                setStatus(`LOADING 1-MINUTE CANDLES (${feedName})...`, STATUS_AMBER);
+                candles = [];
+                let before = null;
+                const maxPages = current.source === "coinbase" ? 5 : 2;
+                for (let i = 0; i < maxPages && candles.length < 1440; i++) {
+                    let page;
+                    try { page = await fetchAnyCandlePage(before); }
+                    catch (e) { if (i === 0) throw e; console.warn("Older candle page failed:", e); break; }
+                    if (!page.length) break;
+                    mergeCandles(page);
+                    before = Math.min(...page.map(c => c.t));
+                    if (current.source === "dex" && page.length < 1000) break;
+                }
+                if (myRun !== runId) return;
+                if (candles.length < 12) throw new Error("Too few 1-minute candles returned for this market (new or illiquid pair?)");
 
                 computeSeries();
                 rerender();
@@ -433,19 +523,21 @@
             }
         }
 
-        function markUpdated() { $('feedMeta').innerText = `DexScreener ${DEX_POLL_MS/1000}s · GeckoTerminal ${CANDLE_POLL_MS/1000}s · updated ${new Date().toLocaleTimeString()} · ${candles.length} candles`; }
+        function markUpdated() { $('feedMeta').innerText = `${current && current.source !== 'dex' ? current.source : 'DexScreener/GeckoTerminal'} · stats ${DEX_POLL_MS/1000}s · candles ${CANDLE_POLL_MS/1000}s · updated ${new Date().toLocaleTimeString()} · ${candles.length} candles`; }
 
         async function pollDex() {
             if (!current || !liveOn || document.hidden || Date.now() < backoffUntil) return;
             try {
                 let p;
-                if (dexOk) {
+                if (current.source !== "dex") {
+                    p = await fetchCexStats(current);
+                } else if (dexOk) {
                     try {
                         const j = await getJson(`${DEX}/latest/dex/pairs/${current.chain}/${current.pairAddress}`);
                         p = j.pairs?.[0] || j.pair;
                     } catch (e) { dexOk = false; }
                 }
-                if (!dexOk) {
+                if (current.source === "dex" && !dexOk) {
                     const j = await getJson(`${GT}/networks/${current.net}/pools/${current.pairAddress}?include=base_token,quote_token,dex`, GT_HEADERS);
                     p = gtPoolToPair(j.data, j.included || []);
                 }
@@ -457,13 +549,13 @@
             if (!current || !liveOn || document.hidden || Date.now() < backoffUntil) return;
             const id = runId;
             try {
-                const recent = await fetchCandlePage(current.net, current.pairAddress);
+                const recent = await fetchAnyCandlePage();
                 if (id !== runId) return;
                 mergeCandles(recent.slice(-60));       // newest ~60 candles overwrite/extend history
                 computeSeries();
                 rerender();
                 markUpdated();
-            } catch (e) { $('feedMeta').innerText = "GeckoTerminal: " + e.message; }
+            } catch (e) { $('feedMeta').innerText = "Candles: " + e.message; }
         }
 
         function startLive() {
